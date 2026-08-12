@@ -476,6 +476,59 @@
   flex-shrink:0;
 }
 .alerts-empty{padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;font-style:italic;}
+
+  /* ---------- RESPONSIVE MOBILE ---------- */
+  .mobile-menu-btn{
+    display:none;
+    position:fixed;top:16px;left:16px;z-index:70;
+    width:42px;height:42px;border-radius:10px;
+    background:#12201b;color:#fff;border:none;
+    font-size:20px;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px -6px rgba(0,0,0,0.3);
+  }
+  .mobile-overlay{
+    display:none;
+    position:fixed;inset:0;background:rgba(0,0,0,0.45);
+    z-index:55;
+  }
+  .mobile-overlay.open{display:block;}
+  .sidebar-close-btn{
+    display:none;
+    position:absolute;top:14px;right:14px;z-index:65;
+    width:34px;height:34px;border-radius:8px;border:none;
+    background:rgba(255,255,255,0.1);color:#fff;font-size:16px;
+    align-items:center;justify-content:center;cursor:pointer;
+  }
+  .sidebar-close-btn:hover{background:rgba(255,255,255,0.2);}
+
+  @media (max-width: 1024px) {
+    .mobile-menu-btn{display:flex;}
+    .shell{flex-direction:column;}
+    .sidebar-close-btn{display:flex;}
+    .sidebar{
+      position:fixed;top:0;left:-280px;height:100vh;
+      width:260px;z-index:60;
+      transition:left .25s ease;
+      box-shadow:0 0 30px rgba(0,0,0,0.4);
+    }
+    .sidebar.open{left:0;}
+    main.content{
+      padding:76px 18px 50px;
+      max-width:100%;
+    }
+    .page-header{margin-right:0;flex-direction:column;align-items:stretch;}
+    .page-header > div:last-child, .page-header .btn-secondary{width:100%;}
+    .cards-row{flex-direction:column;}
+    .panel{overflow-x:auto;}
+    table{min-width:600px;}
+    .alerts-bell{top:16px;right:16px;}
+    .alerts-panel{
+      right:12px;left:12px;width:auto;top:64px;
+    }
+    .modal-box{width:92vw;max-width:420px;}
+    .login-wrap{padding:24px 14px;}
+    .login-card{padding:56px 24px 28px;}
+  }
 </style>
 </head>
 <body>
@@ -2025,58 +2078,6 @@ async function imprimerDocument(documentId) {
   .print-bar button { background: #0e5f4e; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
   @media print { .print-bar { display: none; } body { padding: 0; } }
 
-  /* ---------- RESPONSIVE MOBILE ---------- */
-  .mobile-menu-btn{
-    display:none;
-    position:fixed;top:16px;left:16px;z-index:70;
-    width:42px;height:42px;border-radius:10px;
-    background:#12201b;color:#fff;border:none;
-    font-size:20px;align-items:center;justify-content:center;
-    box-shadow:0 6px 16px -6px rgba(0,0,0,0.3);
-  }
-  .mobile-overlay{
-    display:none;
-    position:fixed;inset:0;background:rgba(0,0,0,0.45);
-    z-index:55;
-  }
-  .mobile-overlay.open{display:block;}
-  .sidebar-close-btn{
-    display:none;
-    position:absolute;top:14px;right:14px;z-index:65;
-    width:34px;height:34px;border-radius:8px;border:none;
-    background:rgba(255,255,255,0.1);color:#fff;font-size:16px;
-    align-items:center;justify-content:center;cursor:pointer;
-  }
-  .sidebar-close-btn:hover{background:rgba(255,255,255,0.2);}
-
-  @media (max-width: 1024px) {
-    .mobile-menu-btn{display:flex;}
-    .shell{flex-direction:column;}
-    .sidebar-close-btn{display:flex;}
-    .sidebar{
-      position:fixed;top:0;left:-280px;height:100vh;
-      width:260px;z-index:60;
-      transition:left .25s ease;
-      box-shadow:0 0 30px rgba(0,0,0,0.4);
-    }
-    .sidebar.open{left:0;}
-    main.content{
-      padding:76px 18px 50px;
-      max-width:100%;
-    }
-    .page-header{margin-right:0;flex-direction:column;align-items:stretch;}
-    .page-header > div:last-child, .page-header .btn-secondary{width:100%;}
-    .cards-row{flex-direction:column;}
-    .panel{overflow-x:auto;}
-    table{min-width:600px;}
-    .alerts-bell{top:16px;right:16px;}
-    .alerts-panel{
-      right:12px;left:12px;width:auto;top:64px;
-    }
-    .modal-box{width:92vw;max-width:420px;}
-    .login-wrap{padding:24px 14px;}
-    .login-card{padding:56px 24px 28px;}
-  }
 </style></head>
 <body>
   <div class="print-bar"><button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button></div>
