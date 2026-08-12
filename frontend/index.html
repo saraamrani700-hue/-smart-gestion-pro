@@ -941,6 +941,17 @@ async function renderDashboard() {
     </div>
 
     <div class="panel" style="margin-top:20px;">
+      <div class="panel-head"><h2>Chiffre d'Affaires, Achats &amp; Benefice</h2></div>
+      <p style="padding:0 20px;color:var(--ink-soft);font-size:13px;margin-top:-4px;">Comparaison mensuelle sur les 6 derniers mois</p>
+      <div style="padding:12px 20px 0;display:flex;gap:18px;font-size:12px;">
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#2563eb;display:inline-block;"></span> Chiffre d'affaires</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#ea580c;display:inline-block;"></span> Achats</span>
+        <span style="display:flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:3px;background:#16a34a;display:inline-block;"></span> Benefice</span>
+      </div>
+      <div id="dash-compare-chart" style="padding:16px 20px;"></div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
       <div class="panel-head"><h2>Produits en alerte de stock</h2></div>
       <table><tbody id="alerte-body"><tr class="empty-row"><td>Chargement…</td></tr></tbody></table>
     </div>
@@ -950,6 +961,7 @@ async function renderDashboard() {
   document.getElementById('dash-statut').addEventListener('change', loadDashboardData);
 
   await loadDashboardData();
+  await loadCompareChart();
 
   try {
     const alertes = await api('/produits/alertes');
@@ -958,6 +970,54 @@ async function renderDashboard() {
       ? alertes.map(p => `<tr><td>${escapeHtml(p.nom)}</td><td class="num">seuil: ${p.seuilAlerte}</td></tr>`).join('')
       : '<tr class="empty-row"><td>Aucun produit en alerte pour le moment.</td></tr>';
   } catch (err) { /* non bloquant */ }
+}
+
+async function loadCompareChart() {
+  const chartEl = document.getElementById('dash-compare-chart');
+  try {
+    const [ventes, achats] = await Promise.all([api('/ventes'), api('/achats')]);
+
+    const now = new Date();
+    const mois = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      mois.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleDateString('fr-FR', { month: 'short' }) });
+    }
+
+    const parMoisCa = {};
+    ventes.filter(v => v.statut !== 'annulee').forEach(v => {
+      const k = (v.dateVente || v.createdAt || '').slice(0, 7);
+      parMoisCa[k] = (parMoisCa[k] || 0) + Number(v.totalHt || 0);
+    });
+    const parMoisAchats = {};
+    achats.filter(a => a.statut !== 'annulee').forEach(a => {
+      const k = (a.createdAt || '').slice(0, 7);
+      parMoisAchats[k] = (parMoisAchats[k] || 0) + Number(a.totalHt || 0);
+    });
+
+    const donnees = mois.map(m => {
+      const ca = parMoisCa[m.key] || 0;
+      const achat = parMoisAchats[m.key] || 0;
+      return { ...m, ca, achat, benefice: ca - achat };
+    });
+
+    const maxVal = Math.max(...donnees.flatMap(d => [d.ca, d.achat, Math.abs(d.benefice)]), 1);
+
+    chartEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:8px;height:180px;">
+        ${donnees.map(d => `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;">
+            <div style="display:flex;align-items:flex-end;gap:3px;height:150px;">
+              <div title="CA: ${money(d.ca)} DH" style="width:14px;background:#2563eb;border-radius:3px 3px 0 0;height:${Math.max(2, Math.round((d.ca / maxVal) * 150))}px;"></div>
+              <div title="Achats: ${money(d.achat)} DH" style="width:14px;background:#ea580c;border-radius:3px 3px 0 0;height:${Math.max(2, Math.round((d.achat / maxVal) * 150))}px;"></div>
+              <div title="Benefice: ${money(d.benefice)} DH" style="width:14px;background:#16a34a;border-radius:3px 3px 0 0;height:${Math.max(2, Math.round((Math.abs(d.benefice) / maxVal) * 150))}px;"></div>
+            </div>
+            <div style="font-size:11px;color:var(--ink-soft);text-transform:capitalize;">${d.label}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch (err) {
+    chartEl.innerHTML = '<p style="text-align:center;color:var(--ink-soft);padding:20px 0;">Impossible de charger la comparaison.</p>';
+  }
 }
 
 async function loadDashboardData() {
