@@ -1,0 +1,2950 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Gestion Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f6f5f2;
+    --panel: #ffffff;
+    --ink: #1b2420;
+    --ink-soft: #5b6560;
+    --line: #e4e1d8;
+    --brand: #0e5f4e;
+    --brand-dark: #0a4a3d;
+    --brand-soft: #e4efe9;
+    --amber: #b5792a;
+    --amber-soft: #f7ecd9;
+    --red: #a3372c;
+    --red-soft: #f8e6e3;
+    --radius: 10px;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter', system-ui, sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ---------- STYLES GLOBAUX (utilises partout : modales, toutes les pages) ---------- */
+  .brand-mark{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    margin-bottom:4px;
+  }
+  .brand-mark .sq{
+    width:10px;height:10px;background:var(--brand);border-radius:2px;display:inline-block;
+    margin-right:6px;
+  }
+  .brand-mark span{font-weight:700;font-size:19px;letter-spacing:-0.01em;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
+  input, select, textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-family:inherit;
+    font-size:14px;
+    background:#fff;
+    color:var(--ink);
+    margin-bottom:16px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus{border-color:var(--brand);}
+  button{
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .btn-primary{
+    width:100%;
+    background:var(--brand);
+    color:#fff;
+    border:none;
+    padding:11px 16px;
+    border-radius:7px;
+    font-size:14px;
+    font-weight:600;
+    transition:background .15s;
+  }
+  .btn-primary:hover{background:var(--brand-dark);}
+  .btn-secondary{
+    background:#fff;
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:7px;
+    font-size:13px;
+    font-weight:600;
+  }
+  .btn-secondary:hover{border-color:var(--brand);color:var(--brand);}
+  .page-header .btn-secondary{
+    background:linear-gradient(90deg, #4aa8e8, #1f5fc4);
+    color:#fff;
+    border:none;
+    padding:12px 22px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    box-shadow:0 8px 20px rgba(31,95,196,0.3);
+  }
+  .page-header .btn-secondary:hover{background:linear-gradient(90deg, #6fc0f5, #2e72d8);color:#fff;border-color:transparent;}
+
+  /* ---------- LOGIN (design Claude Design : fond anime, carte glassmorphism) ---------- */
+  #login-screen{
+    position:relative;
+    min-height:100vh;
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg, #050b1a 0%, #0c2350 30%, #163a7a 50%, #0c2350 70%, #050b1a 100%);
+    font-family:'Inter', Helvetica, Arial, sans-serif;
+  }
+  #login-particles{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .login-lang-picker{
+    position:absolute;
+    top:24px;left:24px;
+    display:flex;align-items:center;gap:8px;
+    color:#fff;font-size:13px;
+    z-index:3;cursor:pointer;
+    user-select:none;
+  }
+  .login-lang-picker:hover{opacity:0.8;}
+  .login-wrap{
+    position:relative;z-index:2;
+    width:100%;max-width:520px;
+    padding:60px 20px;
+    animation:loginFadeIn .6s ease-out;
+  }
+  @keyframes loginFadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  .login-logo-badge{
+    position:relative;
+    width:84px;height:84px;
+    margin:0 auto -42px;
+    border-radius:50%;
+    background:#fff;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    display:flex;align-items:center;justify-content:center;
+    z-index:4;
+  }
+  .login-card{
+    position:relative;
+    margin-top:42px;
+    padding:64px 40px 40px;
+    border-radius:20px;
+    background:rgba(30,70,140,0.28);
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,0.18);
+    box-shadow:0 20px 60px rgba(0,0,0,0.35);
+  }
+  .login-card h1{
+    text-align:center;color:#fff;font-size:30px;font-weight:700;margin:0;
+  }
+  .login-card .subtitle{
+    text-align:center;color:#cfe0f5;font-size:14px;margin-top:8px;
+  }
+  .login-card form{margin-top:32px;display:flex;flex-direction:column;gap:18px;}
+  .login-field{display:flex;flex-direction:column;gap:8px;}
+  .login-field label{
+    color:#fff;font-size:13px;font-weight:500;
+    text-transform:none;letter-spacing:normal;
+    display:flex;justify-content:space-between;align-items:center;margin:0;
+  }
+  .login-field label a{color:#6fd3f0;font-size:13px;font-weight:400;text-decoration:none;}
+  .login-field label a:hover{text-decoration:underline;}
+  .login-card input[type="text"],
+  .login-card input[type="email"],
+  .login-card input[type="password"]{
+    width:100%;box-sizing:border-box;
+    padding:12px 14px;border-radius:10px;
+    background:rgba(10,30,60,0.55);
+    border:1px solid rgba(255,255,255,0.15);
+    color:#fff;font-size:14px;font-family:inherit;
+    outline:none;margin:0;
+    transition:border-color .15s;
+  }
+  .login-card input::placeholder{color:#a9c6e8;opacity:1;}
+  .login-card input:focus{border-color:#6fc0f5;}
+  .login-password-wrap{position:relative;}
+  .login-password-wrap input{padding-right:44px !important;}
+  .login-eye-toggle{
+    position:absolute;right:14px;top:50%;transform:translateY(-50%);
+    cursor:pointer;color:#a9c6e8;font-size:16px;user-select:none;
+    background:none;border:none;padding:0;
+  }
+  .login-remember{display:flex;align-items:center;gap:10px;margin-top:2px;}
+  .login-remember .checkbox{
+    width:18px;height:18px;border-radius:4px;border:1.5px solid #fff;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex-shrink:0;background:transparent;
+    transition:background .15s;
+  }
+  .login-remember .checkbox.checked{background:#fff;}
+  .login-remember .checkbox span{color:#0c2350;font-size:12px;font-weight:700;line-height:1;}
+  .login-remember span.label{color:#fff;font-size:13px;cursor:pointer;}
+  .login-submit{
+    margin-top:10px;width:100%;padding:14px;border:none;border-radius:10px;
+    background:linear-gradient(90deg, #4aa8e8, #1f5fc4);
+    color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+    box-shadow:0 8px 20px rgba(31,95,196,0.4);
+    font-family:inherit;transition:background .2s;
+  }
+  .login-submit:hover{background:linear-gradient(90deg, #6fc0f5, #2e72d8);}
+  #login-error{
+    color:#ffb3ab;font-size:13px;
+    background:rgba(163,55,44,0.25);
+    border:1px solid rgba(255,120,105,0.3);
+    border-radius:8px;padding:9px 12px;
+    display:none;
+  }
+  .login-advanced{margin-top:18px;}
+  .login-advanced summary{color:#a9c6e8;font-size:12px;cursor:pointer;list-style:none;}
+  .login-advanced summary::-webkit-details-marker{display:none;}
+  .login-advanced summary:before{content:'⚙ ';}
+  .login-advanced input{
+    margin-top:8px;font-family:var(--mono);font-size:12px;
+  }
+
+  /* ---------- APP SHELL ---------- */
+  #app-screen{display:none;min-height:100vh;}
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{
+    width:264px;
+    background:linear-gradient(180deg, #050b1a 0%, #0c2350 50%, #163a7a 100%);
+    color:#cfe3da;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+  }
+  .sidebar .brand-mark{padding:24px 20px 0;margin-bottom:0;gap:10px;}
+  .sidebar .brand-mark .sq{
+    width:30px;height:30px;border-radius:50%;background:#fff;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    margin-right:0;
+  }
+  .sidebar .brand-mark span{color:#fff;font-size:17px;}
+  .sidebar .tag{color:#9fb6dd;font-size:12px;margin:2px 0 14px 40px;}
+  .sidebar hr.side-sep{border:none;height:1px;background:rgba(255,255,255,0.08);margin:6px 20px 8px;}
+  nav.side-nav{flex:1;display:flex;flex-direction:column;gap:2px;padding:4px 12px;overflow-y:auto;}
+  nav.side-nav button{
+    text-align:left;
+    background:transparent;
+    border:none;
+    border-left:3px solid transparent;
+    color:#c7d6ef;
+    padding:10px 12px;
+    border-radius:9px;
+    font-size:14px;
+    font-weight:400;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  nav.side-nav button svg{flex-shrink:0;stroke:#9fb6dd;transition:stroke .15s;}
+  nav.side-nav button .dot{display:none;}
+  nav.side-nav button:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  nav.side-nav button:hover svg{stroke:#fff;}
+  nav.side-nav button.active{
+    background:rgba(255,255,255,0.10);
+    border-left-color:#6fe0c0;
+    color:#fff;
+    font-weight:700;
+  }
+  nav.side-nav button.active svg{stroke:#fff;}
+  .sidebar-footer{
+    display:flex;align-items:center;gap:10px;
+    padding:16px 20px 20px;
+    border-top:1px solid rgba(255,255,255,0.08);
+    margin-top:8px;
+  }
+  .sidebar-footer .avatar{
+    width:34px;height:34px;border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:13px;font-weight:700;flex-shrink:0;
+  }
+  .sidebar-footer .who-block{flex:1;min-width:0;}
+  .sidebar-footer .who{
+    font-size:13px;font-weight:600;color:#fff;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    margin-bottom:0;
+  }
+  .sidebar-footer button{
+    width:auto;background:none;color:#7fd3f0;border:none;padding:0;
+    font-size:12px;font-weight:500;cursor:pointer;
+  }
+  .sidebar-footer button:hover{text-decoration:underline;}
+
+  main.content{flex:1;padding:40px 48px 60px;max-width:1200px;}
+  .page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;flex-wrap:wrap;gap:24px;margin-right:56px;}
+  .page-header h1{font-size:26px;margin:0 0 6px;letter-spacing:-0.01em;color:#1a2338;}
+  .page-header p{margin:0;color:#5a6478;font-size:14px;}
+
+  .cards-row{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap;}
+  .stat-card{
+    background:#fff;
+    border:none;
+    border-radius:14px;
+    box-shadow:0 4px 20px rgba(20,40,80,0.08);
+    padding:18px 20px;
+    min-width:150px;
+    flex:1;
+  }
+  .stat-card .num{font-family:var(--mono);font-size:26px;font-weight:700;color:#1f5fc4;}
+  .stat-card .lbl{font-size:12px;color:#8892a6;margin-top:4px;}
+
+  .panel{
+    background:#fff;
+    border:none;
+    border-radius:16px;
+    box-shadow:0 4px 20px rgba(20,40,80,0.08);
+    overflow:hidden;
+  }
+  .panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 24px;
+    border-bottom:1px solid #edf0f5;
+  }
+  .panel-head h2{font-size:15px;margin:0;font-weight:700;color:#1a2338;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:#8892a6;
+    font-weight:700;
+    padding:12px 24px;
+    background:#fafbfd;
+    border-bottom:1px solid #edf0f5;
+  }
+  td{padding:13px 24px;border-bottom:1px solid #edf0f5;color:#2c3348;}
+  tr:last-child td{border-bottom:none;}
+  td.num, th.num{font-family:var(--mono);text-align:right;}
+  .empty-row td{color:#8892a6;text-align:center;padding:40px;font-style:italic;}
+
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:20px;
+  }
+  .badge.ok{background:var(--brand-soft);color:var(--brand-dark);}
+  .badge.warn{background:var(--amber-soft);color:var(--amber);}
+  .badge.bad{background:var(--red-soft);color:var(--red);}
+
+  /* modal */
+  .modal-overlay{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(15,20,18,0.45);
+    align-items:center;justify-content:center;
+    z-index:50;
+  }
+  .modal-overlay.open{display:flex;}
+  .modal-box{
+    background:#fff;
+    border-radius:var(--radius);
+    padding:26px 28px;
+    width:420px;
+    max-height:85vh;
+    overflow-y:auto;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.3);
+  }
+  .modal-box h3{margin:0 0 18px;font-size:16px;}
+  .modal-actions{display:flex;gap:10px;margin-top:6px;}
+  .modal-actions button{flex:1;}
+  .line-item{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;}
+  .line-item select{flex:2;margin-bottom:0;}
+  .line-item input{flex:1;margin-bottom:0;}
+  .line-item button{flex-shrink:0;background:var(--red-soft);color:var(--red);border:none;border-radius:6px;padding:9px 10px;font-size:12px;font-weight:700;}
+  #toast{
+    position:fixed;bottom:20px;right:20px;
+    background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:8px;
+    font-size:13px;font-weight:500;
+    opacity:0;transform:translateY(8px);
+    transition:all .25s;
+    z-index:100;
+    max-width:340px;
+  }
+  #toast.show{opacity:1;transform:translateY(0);}
+  #toast.err{background:var(--red);}
+
+/* ---------- CENTRE D'ALERTES ---------- */
+.alerts-bell{
+  position:fixed;
+  top:18px;
+  right:24px;
+  width:42px;height:42px;
+  border-radius:50%;
+  background:#fff;
+  border:1px solid var(--line);
+  box-shadow:0 6px 16px -6px rgba(20,30,25,0.2);
+  font-size:18px;
+  display:flex;align-items:center;justify-content:center;
+  z-index:60;
+}
+.alerts-bell:hover{border-color:var(--brand);}
+.alerts-badge{
+  position:absolute;
+  top:-4px;right:-4px;
+  background:var(--red);
+  color:#fff;
+  font-size:10.5px;
+  font-weight:700;
+  border-radius:20px;
+  min-width:18px;height:18px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 4px;
+  border:2px solid #fff;
+}
+.alerts-panel{
+  display:none;
+  position:fixed;
+  top:66px;right:24px;
+  width:360px;
+  max-height:70vh;
+  overflow-y:auto;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:0 24px 50px -20px rgba(0,0,0,0.25);
+  z-index:60;
+}
+.alerts-panel.open{display:block;}
+.alerts-panel-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:#fff;
+}
+.alerts-panel-head h3{margin:0;font-size:13.5px;}
+.alerts-list{padding:6px;}
+.alert-item{
+  display:flex;gap:10px;
+  padding:10px 12px;
+  border-radius:8px;
+  align-items:flex-start;
+}
+.alert-item:hover{background:#fafaf7;}
+.alert-item .dot{
+  width:8px;height:8px;border-radius:50%;
+  margin-top:5px;flex-shrink:0;
+  background:var(--brand);
+}
+.alert-item.cheque_echeance .dot{background:var(--red);}
+.alert-item.stock_bas .dot{background:var(--amber);}
+.alert-item .body{flex:1;}
+.alert-item .body .t{font-size:13px;font-weight:600;margin-bottom:2px;}
+.alert-item .body .m{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+.alert-item button{
+  background:none;border:none;color:var(--brand);
+  font-size:11px;font-weight:600;cursor:pointer;padding:2px;
+  flex-shrink:0;
+}
+.alerts-empty{padding:24px;text-align:center;color:var(--ink-soft);font-size:13px;font-style:italic;}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-screen">
+  <canvas id="login-particles"></canvas>
+
+  <div class="login-lang-picker" title="Une seule langue disponible pour le moment">
+    <span style="font-size:10px;">▶</span><span>French - Français</span>
+  </div>
+
+  <div class="login-wrap">
+    <div class="login-logo-badge">
+      <svg width="52" height="52" viewBox="0 0 52 52">
+        <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#f5820c" stroke-width="2.5" transform="rotate(0 26 26)"></ellipse>
+        <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#1e9e6b" stroke-width="2.5" transform="rotate(60 26 26)"></ellipse>
+        <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#2f7de1" stroke-width="2.5" transform="rotate(120 26 26)"></ellipse>
+        <circle cx="26" cy="26" r="4.5" fill="#1a3a6b"></circle>
+      </svg>
+    </div>
+
+    <div class="login-card">
+      <h1>Bienvenue</h1>
+      <p class="subtitle">Chez Smart Gestion Pro Enterprise</p>
+
+      <form id="login-form">
+        <div class="login-field">
+          <label>Nom d'utilisateur (email)</label>
+          <input type="email" id="login-email" placeholder="Nom d'utilisateur" required>
+        </div>
+
+        <div class="login-field">
+          <label>Mot de passe <a href="#" onclick="return false;">Mot de passe oublié ?</a></label>
+          <div class="login-password-wrap">
+            <input type="password" id="login-password" placeholder="Mot de passe" required>
+            <button type="button" class="login-eye-toggle" id="login-eye-toggle" aria-label="Afficher le mot de passe">👁</button>
+          </div>
+        </div>
+
+        <div id="login-error"></div>
+
+        <div class="login-remember">
+          <div class="checkbox" id="login-remember-check"><span></span></div>
+          <span class="label" id="login-remember-label">Souviens-toi de moi</span>
+        </div>
+
+        <button class="login-submit" type="submit">S'identifier</button>
+      </form>
+
+      <details class="login-advanced">
+        <summary>Configuration serveur</summary>
+        <label style="color:#a9c6e8;">Adresse de l'API</label>
+        <input type="text" id="api-url" value="http://localhost:3000/api">
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app-screen">
+  <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Menu">☰</button>
+  <div class="mobile-overlay" id="mobile-overlay"></div>
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-mark">
+        <span class="sq">
+          <svg width="18" height="18" viewBox="0 0 52 52">
+            <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#f5820c" stroke-width="3.5"></ellipse>
+            <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#1e9e6b" stroke-width="3.5" transform="rotate(60 26 26)"></ellipse>
+            <ellipse cx="26" cy="26" rx="20" ry="8" fill="none" stroke="#2f7de1" stroke-width="3.5" transform="rotate(120 26 26)"></ellipse>
+          </svg>
+        </span>
+        <span>Smart Gestion Pro</span>
+      </div>
+      <p class="tag">Espace entreprise</p>
+      <hr class="side-sep">
+      <nav class="side-nav" id="side-nav"></nav>
+      <div class="sidebar-footer">
+        <div class="avatar" id="who-avatar">—</div>
+        <div class="who-block">
+          <div class="who" id="who-am-i">—</div>
+          <button id="logout-btn">Déconnexion</button>
+        </div>
+      </div>
+    </aside>
+    <main class="content" id="content"></main>
+  </div>
+
+  <!-- Centre d'alertes : visible sur toutes les pages, independant du contenu -->
+  <button id="alerts-bell" class="alerts-bell" title="Centre d'alertes">
+    🔔<span id="alerts-badge" class="alerts-badge" style="display:none;">0</span>
+  </button>
+  <div id="alerts-panel" class="alerts-panel">
+    <div class="alerts-panel-head">
+      <h3>Centre d'alertes</h3>
+      <button id="alerts-refresh-btn" class="btn-secondary" style="padding:5px 10px;font-size:11px;">Actualiser</button>
+    </div>
+    <div id="alerts-list" class="alerts-list">
+      <p class="alerts-empty">Chargement…</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =========================================================================
+   SMART GESTION PRO — Frontend Web (SPA vanilla JS, sans build ni framework)
+   Consomme directement l'API NestJS. Aucune dependance externe hormis la
+   police Google Fonts (chargee via <link>, fonctionne dans le navigateur
+   final de l'utilisateur meme si le sandbox de developpement est restreint).
+   ========================================================================= */
+
+const state = {
+  token: localStorage.getItem('sgp_token') || sessionStorage.getItem('sgp_token') || null,
+  apiUrl: localStorage.getItem('sgp_api_url') || (window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : window.location.origin + '/api'),
+  user: JSON.parse(localStorage.getItem('sgp_user') || sessionStorage.getItem('sgp_user') || 'null'),
+  page: 'dashboard',
+  cache: { produits: [], clients: [], ventes: [], notifications: [] },
+};
+
+// ---------------------------------------------------------------------
+// API helper
+// ---------------------------------------------------------------------
+async function api(path, options = {}) {
+  const res = await fetch(state.apiUrl + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(state.token ? { Authorization: 'Bearer ' + state.token } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  let body = null;
+  try { body = await res.json(); } catch (e) { /* reponse vide */ }
+  if (!res.ok) {
+    const message = (body && body.message) ? body.message : `Erreur HTTP ${res.status}`;
+    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+  }
+  return body;
+}
+
+// Upload de fichier (FormData) — pas de Content-Type manuel : le navigateur
+// genere automatiquement le bon "multipart/form-data; boundary=..."
+async function apiUpload(path, file, champ = 'fichier') {
+  const formData = new FormData();
+  formData.append(champ, file);
+  const res = await fetch(state.apiUrl + path, {
+    method: 'POST',
+    headers: state.token ? { Authorization: 'Bearer ' + state.token } : {},
+    body: formData,
+  });
+  let body = null;
+  try { body = await res.json(); } catch (e) { /* reponse vide */ }
+  if (!res.ok) {
+    const message = (body && body.message) ? body.message : `Erreur HTTP ${res.status}`;
+    throw new Error(Array.isArray(message) ? message.join(', ') : message);
+  }
+  return body;
+}
+
+function toast(message, isError = false) {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.className = 'show' + (isError ? ' err' : '');
+  setTimeout(() => { el.className = ''; }, 3200);
+}
+
+function money(n) {
+  return Number(n || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ---------------------------------------------------------------------
+// LOGIN
+// ---------------------------------------------------------------------
+let rememberMe = false;
+
+document.getElementById('login-remember-check').addEventListener('click', () => {
+  rememberMe = !rememberMe;
+  const box = document.getElementById('login-remember-check');
+  box.classList.toggle('checked', rememberMe);
+  box.querySelector('span').textContent = rememberMe ? '✓' : '';
+});
+document.getElementById('login-remember-label').addEventListener('click', () => {
+  document.getElementById('login-remember-check').click();
+});
+
+document.getElementById('login-eye-toggle').addEventListener('click', () => {
+  const pwd = document.getElementById('login-password');
+  const btn = document.getElementById('login-eye-toggle');
+  const showing = pwd.type === 'text';
+  pwd.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁' : '🙈';
+});
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const motDePasse = document.getElementById('login-password').value;
+  state.apiUrl = document.getElementById('api-url').value.trim();
+  localStorage.setItem('sgp_api_url', state.apiUrl);
+
+  const errBox = document.getElementById('login-error');
+  errBox.style.display = 'none';
+
+  try {
+    const data = await api('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, motDePasse }),
+    });
+    state.token = data.accessToken;
+    state.user = data.user;
+
+    // "Souviens-toi de moi" coche -> persiste au-dela de la fermeture du
+    // navigateur (localStorage). Sinon -> uniquement pour cette session
+    // (sessionStorage, efface a la fermeture de l'onglet/navigateur).
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('sgp_token', state.token);
+    storage.setItem('sgp_user', JSON.stringify(state.user));
+
+    enterApp();
+  } catch (err) {
+    errBox.textContent = err.message || 'Connexion impossible. Verifiez vos identifiants et l\'adresse de l\'API.';
+    errBox.style.display = 'block';
+  }
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('sgp_token');
+  localStorage.removeItem('sgp_user');
+  sessionStorage.removeItem('sgp_token');
+  sessionStorage.removeItem('sgp_user');
+  state.token = null;
+  state.user = null;
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+});
+
+// ---------------------------------------------------------------------
+// ANIMATION DU FOND (reseau de particules) — canvas 2D, ~65 particules
+// reliees par des lignes quand elles sont proches, effet "reseau de donnees"
+// ---------------------------------------------------------------------
+function initLoginParticles() {
+  const canvas = document.getElementById('login-particles');
+  if (!canvas || canvas.dataset.started) return;
+  canvas.dataset.started = 'true';
+
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let width, height, raf;
+  const colors = ['#f5820c', '#d96a05', '#7fe8d0', '#2f9e6b', '#6fc0f5', '#2f7de1'];
+  const COUNT = 65;
+  const LINK_DIST = 140;
+
+  const resize = () => {
+    width = canvas.width = canvas.offsetWidth;
+    height = canvas.height = canvas.offsetHeight;
+  };
+
+  const init = () => {
+    resize();
+    particles = Array.from({ length: COUNT }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: (Math.random() - 0.5) * 0.35,
+      r: Math.random() * 1.8 + 1.2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+  };
+
+  const step = () => {
+    ctx.clearRect(0, 0, width, height);
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > width) p.vx *= -1;
+      if (p.y < 0 || p.y > height) p.vy *= -1;
+    }
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const a = particles[i], b = particles[j];
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < LINK_DIST) {
+          ctx.strokeStyle = `rgba(190, 220, 255, ${0.18 * (1 - dist / LINK_DIST)})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
+      }
+    }
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(step);
+  };
+
+  init();
+  step();
+  window.addEventListener('resize', init);
+}
+
+function enterApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  const nom = state.user?.nomComplet || 'Utilisateur';
+  document.getElementById('who-am-i').textContent = nom;
+  document.getElementById('who-am-i').title = state.user?.email || '';
+  const initiales = nom.split(' ').filter(Boolean).slice(0, 2).map(m => m[0].toUpperCase()).join('') || '?';
+  document.getElementById('who-avatar').textContent = initiales;
+  navigate('dashboard');
+  initAlertsCenter();
+  initMobileMenu();
+}
+
+// ---------------------------------------------------------------------
+// NAVIGATION
+// ---------------------------------------------------------------------
+const NAV_ITEMS = [
+  { page: 'dashboard', label: 'Tableau de bord', d: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' },
+  { page: 'produits', label: 'Produits & Stock', d: 'M12 2 3 7v10l9 5 9-5V7zM3 7l9 5 9-5M12 12v10' },
+  { page: 'clients', label: 'Clients', d: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 21c0-3.3 2.7-6 6-6s6 2.7 6 6M17.5 8a2.5 2.5 0 1 0 0-5M15.5 21c.2-2.6 1.6-4.7 3.3-5.5' },
+  { page: 'fournisseurs', label: 'Fournisseurs', d: 'M3 21V8l9-5 9 5v13M9 21v-6h6v6M3 8l9 5 9-5' },
+  { page: 'ventes', label: 'Ventes', d: 'M3 4h2l2 12h11l2-8H7M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z' },
+  { page: 'achats', label: 'Achats', d: 'M6 8V6a4 4 0 0 1 8 0v2M4 8h12l-1 12H5z' },
+  { page: 'paiements', label: 'Paiements', d: 'M3 6h18v12H3zM3 10h18M6 15h4' },
+  { page: 'facturation', label: 'Facturation', d: 'M6 2h9l4 4v16H6zM15 2v4h4M9 12h7M9 16h7M9 8h3' },
+  { page: 'comptabilite', label: 'Comptabilite', d: 'M4 3h11v18H4zM8 8h.01M11 8h.01M8 11h.01M11 11h.01M8 14h.01M11 14h.01M8 17h.01M11 17h.01M17 7v13' },
+  { page: 'rh', label: 'RH', d: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 21c0-3.3 2.7-6 6-6s6 2.7 6 6M17 5l1.5 1.5L21 4' },
+  { page: 'sav', label: 'SAV', d: 'M4 13v-1a8 8 0 0 1 16 0v1M2 13h4v6H4a2 2 0 0 1-2-2zM18 13h4v4a2 2 0 0 1-2 2h-2z' },
+  { page: 'notifications', label: 'Notifications', d: 'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0' },
+  { page: 'ia', label: 'Intelligence Artificielle', d: 'M12 2l1.6 4.4L18 8l-4.4 1.6L12 14l-1.6-4.4L6 8l4.4-1.6zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z' },
+  { page: 'dgi', label: 'Facturation Electronique', d: 'M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5zM9 12l2 2 4-4' },
+  { page: 'sauvegardes', label: 'Sauvegardes', d: 'M7 17a4 4 0 0 1-1-7.9 5 5 0 0 1 9.6-2A4.5 4.5 0 0 1 17 17z' },
+  { page: 'plugins', label: 'Plugins', d: 'M9 2v4M15 2v4M7 6h10v4a5 5 0 0 1-10 0zM12 15v3M9 21h6' },
+  { page: 'audit', label: "Journal d'audit", d: 'M12 8v5l3 2M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z' },
+  { page: 'administration', label: 'Administration', d: 'M10.3 2.4h3.4l.6 2.6 2.4 1 2.4-1.4 2.4 2.4-1.4 2.4 1 2.4 2.6.6v3.4l-2.6.6-1 2.4 1.4 2.4-2.4 2.4-2.4-1.4-2.4 1-.6 2.6h-3.4l-.6-2.6-2.4-1-2.4 1.4-2.4-2.4 1.4-2.4-1-2.4-2.6-.6v-3.4l2.6-.6 1-2.4-1.4-2.4 2.4-2.4 2.4 1.4 2.4-1zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+];
+
+function renderSideNav() {
+  const nav = document.getElementById('side-nav');
+  nav.innerHTML = NAV_ITEMS.map((item, i) => `
+    <button data-page="${item.page}" class="${i === 0 ? 'active' : ''}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${item.d}"></path></svg>
+      ${item.label}
+    </button>`).join('');
+}
+renderSideNav();
+
+document.getElementById('side-nav').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-page]');
+  if (!btn) return;
+  navigate(btn.dataset.page);
+});
+
+function navigate(page) {
+  state.page = page;
+  document.querySelectorAll('#side-nav button').forEach(b =>
+    b.classList.toggle('active', b.dataset.page === page));
+  render();
+}
+
+function render() {
+  const map = {
+    dashboard: renderDashboard, produits: renderProduits, clients: renderClients, fournisseurs: renderFournisseurs, ventes: renderVentes,
+    achats: renderAchats, paiements: renderPaiements, facturation: renderFacturation,
+    comptabilite: renderComptabilite, rh: renderRh, sav: renderSav, notifications: renderNotifications,
+    ia: renderIa, dgi: renderDgi, sauvegardes: renderSauvegardes, plugins: renderPlugins,
+    audit: renderAudit, administration: renderAdministration,
+  };
+  (map[state.page] || renderDashboard)();
+}
+
+// ---------------------------------------------------------------------
+// MODAL helper
+// ---------------------------------------------------------------------
+function openModal(html) {
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+document.getElementById('modal-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-overlay') closeModal();
+});
+
+// ---------------------------------------------------------------------
+// DASHBOARD
+// ---------------------------------------------------------------------
+async function renderDashboard() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Tableau de bord</h1><p>Vue d'ensemble de votre entreprise</p></div>
+    </div>
+    <div class="cards-row" id="stat-cards">
+      <div class="stat-card"><div class="num">…</div><div class="lbl">Produits</div></div>
+      <div class="stat-card"><div class="num">…</div><div class="lbl">Clients</div></div>
+      <div class="stat-card"><div class="num">…</div><div class="lbl">Ventes</div></div>
+      <div class="stat-card"><div class="num">…</div><div class="lbl">Notifications non lues</div></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Produits en alerte de stock</h2></div>
+      <table><tbody id="alerte-body"><tr class="empty-row"><td>Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+
+  try {
+    const [produits, clients, ventes, notifs, alertes] = await Promise.all([
+      api('/produits'), api('/clients'), api('/ventes'), api('/notifications?nonLues=true'), api('/produits/alertes'),
+    ]);
+    state.cache.produits = produits; state.cache.clients = clients; state.cache.ventes = ventes;
+
+    const cards = document.querySelectorAll('#stat-cards .stat-card .num');
+    cards[0].textContent = produits.length;
+    cards[1].textContent = clients.length;
+    cards[2].textContent = ventes.length;
+    cards[3].textContent = notifs.length;
+
+    const tbody = document.getElementById('alerte-body');
+    tbody.innerHTML = alertes.length
+      ? alertes.map(p => `<tr><td>${escapeHtml(p.nom)}</td><td class="num">seuil: ${p.seuilAlerte}</td></tr>`).join('')
+      : '<tr class="empty-row"><td>Aucun produit en alerte pour le moment.</td></tr>';
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+// ---------------------------------------------------------------------
+// PRODUITS
+// ---------------------------------------------------------------------
+async function renderProduits() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Produits &amp; Stock</h1><p>Catalogue et suivi des stocks</p></div>
+      <button class="btn-secondary" id="new-produit-btn">+ Nouveau produit</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les produits</h2></div>
+      <table>
+        <thead><tr><th>Nom</th><th>Reference</th><th class="num">Prix vente HT</th><th class="num">TVA</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="produits-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-produit-btn').addEventListener('click', () => openProduitModal());
+
+  async function load() {
+    try {
+      const produits = await api('/produits');
+      state.cache.produits = produits;
+      const tbody = document.getElementById('produits-body');
+      tbody.innerHTML = produits.length
+        ? produits.map(p => `
+            <tr>
+              <td>${escapeHtml(p.nom)}</td>
+              <td>${escapeHtml(p.reference || '—')}</td>
+              <td class="num">${money(p.prixVenteHt)} MAD</td>
+              <td class="num">${p.tauxTva}%</td>
+              <td>${p.actif ? '<span class="badge ok">Actif</span>' : '<span class="badge bad">Inactif</span>'}</td>
+              <td style="white-space:nowrap;">
+                ${p.gereStock ? `<button class="btn-secondary" data-adjust-stock="${p.id}" data-nom="${escapeHtml(p.nom)}">Stock</button>` : ''}
+                <button class="btn-secondary" data-edit="${p.id}">Modifier</button>
+                ${p.actif ? `<button class="btn-secondary" data-delete="${p.id}" data-nom="${escapeHtml(p.nom)}">Supprimer</button>` : ''}
+              </td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="6">Aucun produit. Cliquez sur "Nouveau produit" pour commencer.</td></tr>';
+
+      tbody.querySelectorAll('button[data-adjust-stock]').forEach(btn => {
+        btn.addEventListener('click', () => openStockModal(btn.dataset.adjustStock, btn.dataset.nom));
+      });
+      tbody.querySelectorAll('button[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const produit = produits.find(p => p.id === btn.dataset.edit);
+          openProduitModal(produit);
+        });
+      });
+      tbody.querySelectorAll('button[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm(`Desactiver le produit "${btn.dataset.nom}" ? Il n'apparaitra plus dans les listes, mais son historique est conserve.`)) return;
+          try {
+            await api(`/produits/${btn.dataset.delete}`, { method: 'DELETE' });
+            toast('Produit desactive.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+  load();
+}
+
+async function openStockModal(produitId, nomProduit) {
+  const succursales = await api('/entreprises/succursales').catch(() => []);
+  const succursaleOptions = succursales.map(s => `<option value="${s.id}">${escapeHtml(s.nom)}</option>`).join('');
+
+  openModal(`
+    <h3>Ajuster le stock — ${escapeHtml(nomProduit)}</h3>
+    <form id="stock-form">
+      <label>Succursale</label>
+      <select id="sf-succursale">${succursaleOptions}</select>
+      <label>Type de mouvement</label>
+      <select id="sf-type">
+        <option value="entree">Entree (reception, approvisionnement)</option>
+        <option value="sortie">Sortie (perte, casse, retrait manuel)</option>
+        <option value="inventaire">Inventaire (definir la quantite exacte)</option>
+      </select>
+      <label>Quantite</label>
+      <input id="sf-quantite" type="number" step="0.001" min="0.001" required>
+      <label>Motif (optionnel)</label>
+      <input id="sf-motif" placeholder="ex: Inventaire annuel, casse...">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Valider</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('stock-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/produits/stock/ajuster', {
+        method: 'POST',
+        body: JSON.stringify({
+          produitId,
+          succursaleId: document.getElementById('sf-succursale').value,
+          type: document.getElementById('sf-type').value,
+          quantite: parseFloat(document.getElementById('sf-quantite').value),
+          motif: document.getElementById('sf-motif').value || undefined,
+        }),
+      });
+      closeModal();
+      toast('Stock ajuste.');
+      renderProduits();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+function openProduitModal(produitExistant) {
+  const estEdition = !!produitExistant;
+  openModal(`
+    <h3>${estEdition ? 'Modifier le produit' : 'Nouveau produit'}</h3>
+    <form id="produit-form">
+      <label>Nom</label><input id="pf-nom" required value="${estEdition ? escapeHtml(produitExistant.nom) : ''}">
+      <label>Prix de vente HT (MAD)</label><input id="pf-prix" type="number" step="0.01" required value="${estEdition ? produitExistant.prixVenteHt : ''}">
+      <label>Taux de TVA (%)</label><input id="pf-tva" type="number" step="0.01" value="${estEdition ? produitExistant.tauxTva : '20'}">
+      <label>Seuil d'alerte de stock</label><input id="pf-seuil" type="number" step="0.001" value="${estEdition ? produitExistant.seuilAlerte : '0'}">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">${estEdition ? 'Enregistrer' : 'Creer'}</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('produit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        nom: document.getElementById('pf-nom').value,
+        prixVenteHt: parseFloat(document.getElementById('pf-prix').value),
+        tauxTva: parseFloat(document.getElementById('pf-tva').value),
+        seuilAlerte: parseFloat(document.getElementById('pf-seuil').value),
+      };
+      if (estEdition) {
+        await api(`/produits/${produitExistant.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        toast('Produit modifie.');
+      } else {
+        await api('/produits', { method: 'POST', body: JSON.stringify(payload) });
+        toast('Produit cree.');
+      }
+      closeModal();
+      renderProduits();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// CLIENTS
+// ---------------------------------------------------------------------
+async function renderClients() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Clients</h1><p>Carnet clients et soldes</p></div>
+      <button class="btn-secondary" id="new-client-btn">+ Nouveau client</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les clients</h2></div>
+      <table>
+        <thead><tr><th>Nom</th><th>Telephone</th><th>Email</th><th class="num">Solde</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="clients-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-client-btn').addEventListener('click', () => openClientModal());
+
+  async function load() {
+    try {
+      const clients = await api('/clients');
+      state.cache.clients = clients;
+      const tbody = document.getElementById('clients-body');
+      tbody.innerHTML = clients.length
+        ? clients.map(c => `
+            <tr>
+              <td>${escapeHtml(c.nom)}</td>
+              <td>${escapeHtml(c.telephone || '—')}</td>
+              <td>${escapeHtml(c.email || '—')}</td>
+              <td class="num">${money(c.solde)} MAD</td>
+              <td>${c.actif ? '<span class="badge ok">Actif</span>' : '<span class="badge bad">Inactif</span>'}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn-secondary" data-edit="${c.id}">Modifier</button>
+                ${c.actif ? `<button class="btn-secondary" data-delete="${c.id}" data-nom="${escapeHtml(c.nom)}">Supprimer</button>` : ''}
+              </td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="6">Aucun client. Cliquez sur "Nouveau client" pour commencer.</td></tr>';
+
+      tbody.querySelectorAll('button[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const client = clients.find(c => c.id === btn.dataset.edit);
+          openClientModal(client);
+        });
+      });
+      tbody.querySelectorAll('button[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm(`Desactiver le client "${btn.dataset.nom}" ? Son historique de ventes est conserve.`)) return;
+          try {
+            await api(`/clients/${btn.dataset.delete}`, { method: 'DELETE' });
+            toast('Client desactive.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+  load();
+}
+
+function openClientModal(clientExistant) {
+  const estEdition = !!clientExistant;
+  openModal(`
+    <h3>${estEdition ? 'Modifier le client' : 'Nouveau client'}</h3>
+    <form id="client-form">
+      <label>Nom</label><input id="cf-nom" required value="${estEdition ? escapeHtml(clientExistant.nom) : ''}">
+      <label>Telephone</label><input id="cf-tel" value="${estEdition ? escapeHtml(clientExistant.telephone || '') : ''}">
+      <label>Email</label><input id="cf-email" type="email" value="${estEdition ? escapeHtml(clientExistant.email || '') : ''}">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">${estEdition ? 'Enregistrer' : 'Creer'}</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('client-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        nom: document.getElementById('cf-nom').value,
+        telephone: document.getElementById('cf-tel').value || undefined,
+        email: document.getElementById('cf-email').value || undefined,
+      };
+      if (estEdition) {
+        await api(`/clients/${clientExistant.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        toast('Client modifie.');
+      } else {
+        await api('/clients', { method: 'POST', body: JSON.stringify(payload) });
+        toast('Client cree.');
+      }
+      closeModal();
+      renderClients();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// FOURNISSEURS
+// ---------------------------------------------------------------------
+async function renderFournisseurs() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Fournisseurs</h1><p>Carnet fournisseurs et dettes</p></div>
+      <button class="btn-secondary" id="new-fournisseur-btn">+ Nouveau fournisseur</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les fournisseurs</h2></div>
+      <table>
+        <thead><tr><th>Nom</th><th>Telephone</th><th>Email</th><th class="num">Solde du</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="fournisseurs-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-fournisseur-btn').addEventListener('click', () => openFournisseurModal());
+
+  async function load() {
+    try {
+      const fournisseurs = await api('/fournisseurs');
+      const tbody = document.getElementById('fournisseurs-body');
+      tbody.innerHTML = fournisseurs.length
+        ? fournisseurs.map(f => `
+            <tr>
+              <td>${escapeHtml(f.nom)}</td>
+              <td>${escapeHtml(f.telephone || '—')}</td>
+              <td>${escapeHtml(f.email || '—')}</td>
+              <td class="num">${money(f.solde)} MAD</td>
+              <td>${f.actif ? '<span class="badge ok">Actif</span>' : '<span class="badge bad">Inactif</span>'}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn-secondary" data-edit="${f.id}">Modifier</button>
+                ${f.actif ? `<button class="btn-secondary" data-delete="${f.id}" data-nom="${escapeHtml(f.nom)}">Supprimer</button>` : ''}
+              </td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="6">Aucun fournisseur. Cliquez sur "Nouveau fournisseur" pour commencer.</td></tr>';
+
+      tbody.querySelectorAll('button[data-edit]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const fournisseur = fournisseurs.find(f => f.id === btn.dataset.edit);
+          openFournisseurModal(fournisseur);
+        });
+      });
+      tbody.querySelectorAll('button[data-delete]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm(`Desactiver le fournisseur "${btn.dataset.nom}" ? Son historique d'achats est conserve.`)) return;
+          try {
+            await api(`/fournisseurs/${btn.dataset.delete}`, { method: 'DELETE' });
+            toast('Fournisseur desactive.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+  load();
+}
+
+function openFournisseurModal(fournisseurExistant) {
+  const estEdition = !!fournisseurExistant;
+  openModal(`
+    <h3>${estEdition ? 'Modifier le fournisseur' : 'Nouveau fournisseur'}</h3>
+    <form id="fournisseur-form">
+      <label>Nom</label><input id="ff-nom" required value="${estEdition ? escapeHtml(fournisseurExistant.nom) : ''}">
+      <label>Telephone</label><input id="ff-tel" value="${estEdition ? escapeHtml(fournisseurExistant.telephone || '') : ''}">
+      <label>Email</label><input id="ff-email" type="email" value="${estEdition ? escapeHtml(fournisseurExistant.email || '') : ''}">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">${estEdition ? 'Enregistrer' : 'Creer'}</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('fournisseur-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        nom: document.getElementById('ff-nom').value,
+        telephone: document.getElementById('ff-tel').value || undefined,
+        email: document.getElementById('ff-email').value || undefined,
+      };
+      if (estEdition) {
+        await api(`/fournisseurs/${fournisseurExistant.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        toast('Fournisseur modifie.');
+      } else {
+        await api('/fournisseurs', { method: 'POST', body: JSON.stringify(payload) });
+        toast('Fournisseur cree.');
+      }
+      closeModal();
+      renderFournisseurs();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// VENTES
+// ---------------------------------------------------------------------
+async function renderVentes() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Ventes</h1><p>Historique des ventes validees</p></div>
+      <button class="btn-secondary" id="new-vente-btn">+ Nouvelle vente</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Toutes les ventes</h2></div>
+      <table>
+        <thead><tr><th>Numero</th><th>Client</th><th class="num">Total TTC</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="ventes-body"><tr class="empty-row"><td colspan="5">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-vente-btn').addEventListener('click', openVenteModal);
+
+  async function load() {
+    try {
+      const ventes = await api('/ventes');
+      const tbody = document.getElementById('ventes-body');
+      const badgeFor = (s) => s === 'annulee' ? 'bad' : (s === 'payee' ? 'ok' : 'warn');
+      tbody.innerHTML = ventes.length
+        ? ventes.map(v => `
+            <tr>
+              <td>${escapeHtml(v.numero)}</td>
+              <td>${escapeHtml(v.client?.nom || 'Client de passage')}</td>
+              <td class="num">${money(v.totalTtc)} MAD</td>
+              <td><span class="badge ${badgeFor(v.statut)}">${v.statut}</span></td>
+              <td>${v.statut !== 'annulee' ? `<button class="btn-secondary" data-annuler="${v.id}">Annuler</button>` : ''}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="5">Aucune vente. Cliquez sur "Nouvelle vente" pour commencer.</td></tr>';
+
+      tbody.querySelectorAll('button[data-annuler]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Annuler cette vente ? Le stock sera remis et la dette client annulee.')) return;
+          try {
+            await api(`/ventes/${btn.dataset.annuler}/annuler`, { method: 'POST' });
+            toast('Vente annulee, stock remis.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) {
+      toast(err.message, true);
+    }
+  }
+  load();
+}
+
+let ligneCount = 0;
+function ligneRow(idx) {
+  const options = state.cache.produits.map(p =>
+    `<option value="${p.id}" data-prix="${p.prixVenteHt}" data-tva="${p.tauxTva}">${escapeHtml(p.nom)}</option>`).join('');
+  return `
+    <div class="line-item" data-idx="${idx}">
+      <select class="vf-produit">${options}</select>
+      <input class="vf-quantite" type="number" step="0.001" value="1" placeholder="Qte">
+      <button type="button" onclick="this.closest('.line-item').remove()">✕</button>
+    </div>`;
+}
+
+async function openVenteModal() {
+  if (!state.cache.produits.length) {
+    try { state.cache.produits = await api('/produits'); } catch (e) { toast(e.message, true); return; }
+  }
+  if (!state.cache.produits.length) {
+    toast('Creez d\'abord au moins un produit.', true);
+    return;
+  }
+  if (!state.cache.clients.length) {
+    try { state.cache.clients = await api('/clients'); } catch (e) { /* optionnel */ }
+  }
+
+  const clientOptions = ['<option value="">Client de passage</option>']
+    .concat(state.cache.clients.map(c => `<option value="${c.id}">${escapeHtml(c.nom)}</option>`)).join('');
+
+  ligneCount = 0;
+  openModal(`
+    <h3>Nouvelle vente</h3>
+    <form id="vente-form">
+      <label>Client (optionnel)</label>
+      <select id="vf-client">${clientOptions}</select>
+      <label>Lignes</label>
+      <div id="lignes-container">${ligneRow(ligneCount)}</div>
+      <button type="button" class="btn-secondary" id="add-ligne-btn" style="margin-bottom:16px;">+ Ajouter une ligne</button>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Valider la vente</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('add-ligne-btn').addEventListener('click', () => {
+    ligneCount++;
+    document.getElementById('lignes-container').insertAdjacentHTML('beforeend', ligneRow(ligneCount));
+  });
+
+  document.getElementById('vente-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const lignes = Array.from(document.querySelectorAll('.line-item')).map(row => {
+      const select = row.querySelector('.vf-produit');
+      const opt = select.selectedOptions[0];
+      return {
+        produitId: select.value,
+        quantite: parseFloat(row.querySelector('.vf-quantite').value),
+        prixUnitaireHt: parseFloat(opt.dataset.prix),
+        tauxTva: parseFloat(opt.dataset.tva),
+      };
+    });
+
+    // Note : la succursale par defaut du seed est utilisee ici en dur pour la
+    // demo. Dans une vraie interface, on la selectionnerait dynamiquement.
+    let succursaleId = state.user?.succursaleId;
+    if (!succursaleId) {
+      try {
+        const succursales = await api('/entreprises/succursales');
+        succursaleId = succursales[0]?.id;
+      } catch (e) { /* ignore */ }
+    }
+
+    try {
+      await api('/ventes', {
+        method: 'POST',
+        body: JSON.stringify({
+          succursaleId,
+          clientId: document.getElementById('vf-client').value || undefined,
+          lignes,
+        }),
+      });
+      closeModal();
+      toast('Vente enregistree.');
+      renderVentes();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// ACHATS
+// ---------------------------------------------------------------------
+async function renderAchats() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Achats</h1><p>Historique des achats fournisseurs</p></div>
+      <button class="btn-secondary" id="new-achat-btn">+ Nouvel achat</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les achats</h2></div>
+      <table>
+        <thead><tr><th>Numero</th><th>Fournisseur</th><th class="num">Total TTC</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="achats-body"><tr class="empty-row"><td colspan="5">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-achat-btn').addEventListener('click', openAchatModal);
+
+  async function load() {
+    try {
+      const achats = await api('/achats');
+      const tbody = document.getElementById('achats-body');
+      tbody.innerHTML = achats.length
+        ? achats.map(a => `
+            <tr>
+              <td>${escapeHtml(a.numero)}</td>
+              <td>${escapeHtml(a.fournisseur?.nom || '—')}</td>
+              <td class="num">${money(a.totalTtc)} MAD</td>
+              <td><span class="badge ${a.statut === 'annulee' ? 'bad' : a.statut === 'payee' ? 'ok' : 'warn'}">${a.statut}</span></td>
+              <td>${a.statut !== 'annulee' ? `<button class="btn-secondary" data-annuler-achat="${a.id}">Annuler</button>` : ''}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="5">Aucun achat. Cliquez sur "Nouvel achat" pour commencer.</td></tr>';
+
+      tbody.querySelectorAll('button[data-annuler-achat]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Annuler cet achat ? Le stock ajoute sera retire et la dette fournisseur annulee.')) return;
+          try {
+            await api(`/achats/${btn.dataset.annulerAchat}/annuler`, { method: 'POST' });
+            toast('Achat annule.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+async function openAchatModal() {
+  const produits = state.cache.produits.length ? state.cache.produits : await api('/produits').catch(() => []);
+  state.cache.produits = produits;
+  if (!produits.length) { toast('Creez d\'abord au moins un produit.', true); return; }
+  const fournisseurs = await api('/fournisseurs').catch(() => []);
+  const succursales = await api('/entreprises/succursales').catch(() => []);
+
+  const fournisseurOptions = ['<option value="">Sans fournisseur</option>']
+    .concat(fournisseurs.map(f => `<option value="${f.id}">${escapeHtml(f.nom)}</option>`)).join('');
+  const options = produits.map(p => `<option value="${p.id}" data-prix="${p.prixAchatHt || 0}" data-tva="${p.tauxTva}">${escapeHtml(p.nom)}</option>`).join('');
+
+  openModal(`
+    <h3>Nouvel achat</h3>
+    <form id="achat-form">
+      <label>Fournisseur (optionnel)</label>
+      <select id="af-fournisseur">${fournisseurOptions}</select>
+      <label>Produit</label>
+      <select id="af-produit">${options}</select>
+      <label>Quantite</label>
+      <input id="af-quantite" type="number" step="0.001" value="1">
+      <label>Prix d'achat unitaire HT (MAD)</label>
+      <input id="af-prix" type="number" step="0.01" value="0">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Enregistrer l'achat</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('af-produit').addEventListener('change', (e) => {
+    document.getElementById('af-prix').value = e.target.selectedOptions[0].dataset.prix;
+  });
+
+  document.getElementById('achat-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const select = document.getElementById('af-produit');
+    const opt = select.selectedOptions[0];
+    try {
+      await api('/achats', {
+        method: 'POST',
+        body: JSON.stringify({
+          succursaleId: succursales[0]?.id,
+          fournisseurId: document.getElementById('af-fournisseur').value || undefined,
+          lignes: [{
+            produitId: select.value,
+            quantite: parseFloat(document.getElementById('af-quantite').value),
+            prixUnitaireHt: parseFloat(document.getElementById('af-prix').value),
+            tauxTva: parseFloat(opt.dataset.tva),
+          }],
+        }),
+      });
+      closeModal();
+      toast('Achat enregistre (stock incremente).');
+      renderAchats();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// PAIEMENTS
+// ---------------------------------------------------------------------
+async function renderPaiements() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Paiements</h1><p>Encaissements et decaissements</p></div>
+      <button class="btn-secondary" id="new-paiement-btn">+ Nouveau paiement</button>
+    </div>
+    <div class="cards-row" id="paiement-stats"></div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Historique des paiements</h2></div>
+      <table>
+        <thead><tr><th>Type</th><th>Moyen</th><th class="num">Montant</th><th>Statut</th></tr></thead>
+        <tbody id="paiements-body"><tr class="empty-row"><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Cheques (recus &amp; emis)</h2>
+        <button class="btn-secondary" id="new-cheque-btn">+ Nouveau cheque</button>
+      </div>
+      <table>
+        <thead><tr><th>Numero</th><th>Type</th><th>Banque</th><th class="num">Montant</th><th>Echeance</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="cheques-body"><tr class="empty-row"><td colspan="7">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-paiement-btn').addEventListener('click', openPaiementModal);
+  document.getElementById('new-cheque-btn').addEventListener('click', openChequeModal);
+
+  try {
+    const [paiements, dashboard] = await Promise.all([api('/paiements'), api('/paiements/dashboard')]);
+    document.getElementById('paiement-stats').innerHTML = `
+      <div class="stat-card"><div class="num">${money(dashboard.total)}</div><div class="lbl">Total encaisse (MAD, mois en cours)</div></div>
+      <div class="stat-card"><div class="num">${dashboard.nombreTransactions}</div><div class="lbl">Transactions</div></div>
+    `;
+    const tbody = document.getElementById('paiements-body');
+    tbody.innerHTML = paiements.length
+      ? paiements.map(p => `
+          <tr>
+            <td>${p.documentType}</td>
+            <td>${p.moyenPaiement}</td>
+            <td class="num">${money(p.montant)} MAD</td>
+            <td><span class="badge ${p.statut === 'accepte' ? 'ok' : 'bad'}">${p.statut}</span></td>
+          </tr>`).join('')
+      : '<tr class="empty-row"><td colspan="4">Aucun paiement enregistre.</td></tr>';
+  } catch (err) { toast(err.message, true); }
+
+  await loadCheques();
+}
+
+async function loadCheques() {
+  try {
+    const cheques = await api('/paiements/cheques');
+    const tbody = document.getElementById('cheques-body');
+    const today = new Date().toISOString().slice(0, 10);
+    tbody.innerHTML = cheques.length
+      ? cheques.map(c => {
+          const enRetard = c.statut === 'en_attente' && c.dateEcheance && c.dateEcheance < today;
+          return `
+            <tr>
+              <td>${escapeHtml(c.numeroCheque || '—')}</td>
+              <td>${c.type === 'recu' ? 'Recu (client)' : 'Emis (fournisseur)'}</td>
+              <td>${escapeHtml(c.banque || '—')}</td>
+              <td class="num">${money(c.montant)} MAD</td>
+              <td>${c.dateEcheance || '—'} ${enRetard ? '<span class="badge bad">En retard</span>' : ''}</td>
+              <td><span class="badge ${c.statut === 'encaisse' ? 'ok' : c.statut === 'rejete' ? 'bad' : 'warn'}">${c.statut}</span></td>
+              <td>${c.statut === 'en_attente' ? `
+                <button class="btn-secondary" data-encaisser="${c.id}">Encaisser</button>
+                <button class="btn-secondary" data-rejeter="${c.id}">Rejeter</button>` : ''}</td>
+            </tr>`;
+        }).join('')
+      : '<tr class="empty-row"><td colspan="7">Aucun cheque enregistre.</td></tr>';
+
+    tbody.querySelectorAll('button[data-encaisser]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try { await api(`/paiements/cheques/${btn.dataset.encaisser}/encaisser`, { method: 'POST' }); toast('Cheque encaisse.'); loadCheques(); }
+        catch (err) { toast(err.message, true); }
+      });
+    });
+    tbody.querySelectorAll('button[data-rejeter]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try { await api(`/paiements/cheques/${btn.dataset.rejeter}/rejeter`, { method: 'POST' }); toast('Cheque rejete.'); loadCheques(); }
+        catch (err) { toast(err.message, true); }
+      });
+    });
+  } catch (err) { toast(err.message, true); }
+}
+
+function openChequeModal() {
+  openModal(`
+    <h3>Nouveau cheque</h3>
+    <form id="cheque-form">
+      <label>Type</label>
+      <select id="chf-type">
+        <option value="recu">Recu d'un client</option>
+        <option value="emis">Emis vers un fournisseur</option>
+      </select>
+      <label>Numero du cheque</label><input id="chf-numero">
+      <label>Banque</label><input id="chf-banque">
+      <label>Montant (MAD)</label><input id="chf-montant" type="number" step="0.01" required>
+      <label>Date d'emission</label><input id="chf-emission" type="date">
+      <label>Date d'echeance (pour l'encaissement)</label><input id="chf-echeance" type="date">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('cheque-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/paiements/cheques', {
+        method: 'POST',
+        body: JSON.stringify({
+          type: document.getElementById('chf-type').value,
+          numeroCheque: document.getElementById('chf-numero').value || undefined,
+          banque: document.getElementById('chf-banque').value || undefined,
+          montant: parseFloat(document.getElementById('chf-montant').value),
+          dateEmission: document.getElementById('chf-emission').value || undefined,
+          dateEcheance: document.getElementById('chf-echeance').value || undefined,
+        }),
+      });
+      closeModal();
+      toast('Cheque enregistre.');
+      loadCheques();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+async function openPaiementModal() {
+  const [ventes, achats] = await Promise.all([api('/ventes').catch(() => []), api('/achats').catch(() => [])]);
+  openModal(`
+    <h3>Nouveau paiement</h3>
+    <form id="paiement-form">
+      <label>Type de document</label>
+      <select id="pf-type">
+        <option value="vente">Encaissement (vente)</option>
+        <option value="achat">Decaissement (achat)</option>
+      </select>
+      <label>Document</label>
+      <select id="pf-document">
+        ${ventes.map(v => `<option value="${v.id}" data-type="vente">Vente ${escapeHtml(v.numero)} (${money(v.totalTtc)} MAD)</option>`).join('')}
+        ${achats.map(a => `<option value="${a.id}" data-type="achat">Achat ${escapeHtml(a.numero)} (${money(a.totalTtc)} MAD)</option>`).join('')}
+      </select>
+      <label>Moyen de paiement</label>
+      <select id="pf-moyen">
+        <option value="cash">Cash</option>
+        <option value="tpe">Carte / TPE</option>
+        <option value="virement">Virement</option>
+        <option value="cheque">Cheque</option>
+        <option value="mobile_wallet">Mobile Wallet</option>
+        <option value="qr_code">QR Code</option>
+      </select>
+      <label>Montant (MAD)</label>
+      <input id="pf-montant" type="number" step="0.01" required>
+      <label>Reference transaction (optionnel)</label>
+      <input id="pf-ref">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Enregistrer</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('paiement-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const docSelect = document.getElementById('pf-document');
+    try {
+      await api('/paiements', {
+        method: 'POST',
+        body: JSON.stringify({
+          documentType: docSelect.selectedOptions[0]?.dataset.type,
+          documentId: docSelect.value,
+          moyenPaiement: document.getElementById('pf-moyen').value,
+          montant: parseFloat(document.getElementById('pf-montant').value),
+          referenceTransaction: document.getElementById('pf-ref').value || undefined,
+        }),
+      });
+      closeModal();
+      toast('Paiement enregistre.');
+      renderPaiements();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// FACTURATION
+// ---------------------------------------------------------------------
+async function renderFacturation() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Facturation</h1><p>Devis, proformas, bons de livraison, factures, avoirs</p></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-secondary" id="import-excel-btn" style="background:#fff;color:var(--brand);border:1px solid var(--line);box-shadow:none;">📊 Importer depuis Excel</button>
+        <button class="btn-secondary" id="new-doc-btn">+ Nouveau document</button>
+      </div>
+    </div>
+    <input type="file" id="excel-file-input" accept=".xlsx,.xls" style="display:none;">
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les documents</h2></div>
+      <table>
+        <thead><tr><th>Numero</th><th>Type</th><th>Client</th><th class="num">Total TTC</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="docs-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-doc-btn').addEventListener('click', openDocumentModal);
+  document.getElementById('import-excel-btn').addEventListener('click', () => document.getElementById('excel-file-input').click());
+  document.getElementById('excel-file-input').addEventListener('change', (e) => {
+    if (e.target.files[0]) importerExcel(e.target.files[0], load);
+  });
+
+  async function load() {
+    try {
+      const docs = await api('/facturation/documents');
+      const tbody = document.getElementById('docs-body');
+      tbody.innerHTML = docs.length
+        ? docs.map(d => `
+            <tr>
+              <td>${escapeHtml(d.numero)}</td>
+              <td><span class="badge ok">${d.type}</span></td>
+              <td>${escapeHtml(d.client?.nom || '—')}</td>
+              <td class="num">${money(d.totalTtc)} MAD</td>
+              <td>${d.statut !== 'annule' ? d.statut : '<span class="badge bad">annule</span>'}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn-secondary" data-print="${d.id}" title="Imprimer / Enregistrer en PDF">🖨️</button>
+                ${d.type !== 'facture' && d.statut !== 'converti' && d.statut !== 'annule' ? `<button class="btn-secondary" data-convert="${d.id}">→ Facture</button>` : ''}
+                ${d.statut !== 'annule' ? `<button class="btn-secondary" data-annuler-doc="${d.id}">Annuler</button>` : ''}
+                ${d.statut === 'brouillon' ? `<button class="btn-secondary" data-delete-doc="${d.id}">Supprimer</button>` : ''}
+              </td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="6">Aucun document.</td></tr>';
+
+      tbody.querySelectorAll('button[data-delete-doc]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Supprimer definitivement ce document (brouillon) ?')) return;
+          try {
+            await api(`/facturation/documents/${btn.dataset.deleteDoc}`, { method: 'DELETE' });
+            toast('Document supprime.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+
+      tbody.querySelectorAll('button[data-annuler-doc]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Annuler ce document ? Cette action est definitive.')) return;
+          try {
+            await api(`/facturation/documents/${btn.dataset.annulerDoc}/annuler`, { method: 'POST' });
+            toast('Document annule.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+
+      tbody.querySelectorAll('button[data-convert]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await api(`/facturation/documents/${btn.dataset.convert}/convertir`, {
+              method: 'POST', body: JSON.stringify({ nouveauType: 'facture' }),
+            });
+            toast('Document converti en facture.');
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+
+      tbody.querySelectorAll('button[data-print]').forEach(btn => {
+        btn.addEventListener('click', () => imprimerDocument(btn.dataset.print));
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// IMPRESSION / ENREGISTREMENT PDF D'UN DOCUMENT (devis, facture, BL, avoir)
+// ---------------------------------------------------------------------
+const LIBELLE_TYPE_DOC = {
+  devis: 'DEVIS', proforma: 'FACTURE PROFORMA', bon_livraison: 'BON DE LIVRAISON',
+  facture: 'FACTURE', avoir: 'AVOIR',
+};
+
+async function imprimerDocument(documentId) {
+  try {
+    const [doc, entreprise] = await Promise.all([
+      api(`/facturation/documents/${documentId}`),
+      api('/entreprises/moi'),
+    ]);
+
+    const lignesHtml = (doc.lignes || []).map(l => {
+      const brut = l.quantite * l.prixUnitaireHt;
+      const remise = brut * ((l.remisePct || 0) / 100);
+      const totalLigneHt = brut - remise;
+      return `
+        <tr>
+          <td>${escapeHtml(l.designation || l.produit?.nom || '—')}</td>
+          <td style="text-align:right;">${money(l.quantite)}</td>
+          <td style="text-align:right;">${money(l.prixUnitaireHt)}</td>
+          <td style="text-align:right;">${l.tauxTva}%</td>
+          <td style="text-align:right;">${money(totalLigneHt)}</td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>${LIBELLE_TYPE_DOC[doc.type] || doc.type} ${escapeHtml(doc.numero)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 40px; font-size: 13px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; }
+  .header h1 { font-size: 22px; margin: 0 0 4px; color: #0e5f4e; }
+  .entreprise-info { font-size: 12px; color: #555; line-height: 1.5; }
+  .doc-title { text-align: right; }
+  .doc-title h2 { font-size: 24px; margin: 0; letter-spacing: 1px; }
+  .doc-title .numero { font-size: 14px; color: #555; margin-top: 4px; }
+  .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
+  .meta .client-box { background: #f7f7f5; padding: 14px 18px; border-radius: 8px; min-width: 260px; }
+  .meta .client-box .label { font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: .05em; margin-bottom: 4px; }
+  .meta .dates { text-align: right; font-size: 12px; color: #555; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #888; padding: 10px 8px; border-bottom: 2px solid #1a1a1a; }
+  th:nth-child(n+2) { text-align: right; }
+  td { padding: 10px 8px; border-bottom: 1px solid #e5e5e5; }
+  .totaux { display: flex; justify-content: flex-end; }
+  .totaux table { width: 280px; margin: 0; }
+  .totaux td { border: none; padding: 6px 8px; }
+  .totaux tr.total-ttc td { font-weight: bold; font-size: 15px; border-top: 2px solid #1a1a1a; padding-top: 10px; }
+  .footer { margin-top: 60px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 10.5px; color: #888; text-align: center; }
+  .print-bar { text-align: center; margin-bottom: 30px; }
+  .print-bar button { background: #0e5f4e; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; cursor: pointer; font-weight: 600; }
+  @media print { .print-bar { display: none; } body { padding: 0; } }
+
+  /* ---------- RESPONSIVE MOBILE ---------- */
+  .mobile-menu-btn{
+    display:none;
+    position:fixed;top:16px;left:16px;z-index:70;
+    width:42px;height:42px;border-radius:10px;
+    background:#12201b;color:#fff;border:none;
+    font-size:20px;align-items:center;justify-content:center;
+    box-shadow:0 6px 16px -6px rgba(0,0,0,0.3);
+  }
+  .mobile-overlay{
+    display:none;
+    position:fixed;inset:0;background:rgba(0,0,0,0.45);
+    z-index:55;
+  }
+  .mobile-overlay.open{display:block;}
+
+  @media (max-width: 860px) {
+    .mobile-menu-btn{display:flex;}
+    .shell{flex-direction:column;}
+    .sidebar{
+      position:fixed;top:0;left:-280px;height:100vh;
+      width:260px;z-index:60;
+      transition:left .25s ease;
+      box-shadow:0 0 30px rgba(0,0,0,0.4);
+    }
+    .sidebar.open{left:0;}
+    main.content{
+      padding:76px 18px 50px;
+      max-width:100%;
+    }
+    .page-header{margin-right:0;flex-direction:column;align-items:stretch;}
+    .page-header > div:last-child, .page-header .btn-secondary{width:100%;}
+    .cards-row{flex-direction:column;}
+    .panel{overflow-x:auto;}
+    table{min-width:600px;}
+    .alerts-bell{top:16px;right:16px;}
+    .alerts-panel{
+      right:12px;left:12px;width:auto;top:64px;
+    }
+    .modal-box{width:92vw;max-width:420px;}
+    .login-wrap{padding:24px 14px;}
+    .login-card{padding:56px 24px 28px;}
+  }
+</style></head>
+<body>
+  <div class="print-bar"><button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button></div>
+
+  <div class="header">
+    <div>
+      <h1>${escapeHtml(entreprise.nom || 'Entreprise')}</h1>
+      <div class="entreprise-info">
+        ${entreprise.adresse ? escapeHtml(entreprise.adresse) + '<br>' : ''}
+        ${entreprise.telephone ? 'Tel: ' + escapeHtml(entreprise.telephone) + '<br>' : ''}
+        ${entreprise.email ? escapeHtml(entreprise.email) + '<br>' : ''}
+        ${entreprise.ice ? 'ICE: ' + escapeHtml(entreprise.ice) + ' ' : ''}
+        ${entreprise.rc ? '— RC: ' + escapeHtml(entreprise.rc) : ''}
+      </div>
+    </div>
+    <div class="doc-title">
+      <h2>${LIBELLE_TYPE_DOC[doc.type] || doc.type.toUpperCase()}</h2>
+      <div class="numero">N° ${escapeHtml(doc.numero)}</div>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div class="client-box">
+      <div class="label">Client</div>
+      <div>${escapeHtml(doc.client?.nom || 'Client de passage')}</div>
+      ${doc.client?.telephone ? `<div>${escapeHtml(doc.client.telephone)}</div>` : ''}
+      ${doc.client?.email ? `<div>${escapeHtml(doc.client.email)}</div>` : ''}
+      ${doc.client?.ice ? `<div>ICE: ${escapeHtml(doc.client.ice)}</div>` : ''}
+    </div>
+    <div class="dates">
+      <div>Date : ${doc.dateDocument}</div>
+      ${doc.dateEcheance ? `<div>Echeance : ${doc.dateEcheance}</div>` : ''}
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Designation</th><th>Qte</th><th>P.U. HT</th><th>TVA</th><th>Total HT</th></tr></thead>
+    <tbody>${lignesHtml}</tbody>
+  </table>
+
+  <div class="totaux">
+    <table>
+      <tr><td>Total HT</td><td style="text-align:right;">${money(doc.totalHt)} ${entreprise.devise || 'MAD'}</td></tr>
+      <tr><td>Total TVA</td><td style="text-align:right;">${money(doc.totalTva)} ${entreprise.devise || 'MAD'}</td></tr>
+      <tr class="total-ttc"><td>Total TTC</td><td style="text-align:right;">${money(doc.totalTtc)} ${entreprise.devise || 'MAD'}</td></tr>
+    </table>
+  </div>
+
+  <div class="footer">${escapeHtml(entreprise.nom || '')} ${entreprise.ice ? '— ICE: ' + escapeHtml(entreprise.ice) : ''} — Document genere par Smart Gestion Pro</div>
+</body></html>`;
+
+    const fenetre = window.open('', '_blank');
+    if (!fenetre) { toast('Le navigateur a bloque l\'ouverture. Autorisez les pop-ups pour ce site.', true); return; }
+    fenetre.document.write(html);
+    fenetre.document.close();
+  } catch (err) {
+    toast(err.message, true);
+  }
+}
+
+async function openDocumentModal() {
+  const clients = state.cache.clients.length ? state.cache.clients : await api('/clients').catch(() => []);
+  const clientOptions = ['<option value="">Sans client</option>']
+    .concat(clients.map(c => `<option value="${c.id}">${escapeHtml(c.nom)}</option>`)).join('');
+
+  openModal(`
+    <h3>Nouveau document commercial</h3>
+    <form id="doc-form">
+      <label>Type</label>
+      <select id="df-type">
+        <option value="devis">Devis</option>
+        <option value="proforma">Proforma</option>
+        <option value="bon_livraison">Bon de livraison</option>
+        <option value="facture">Facture</option>
+        <option value="avoir">Avoir</option>
+      </select>
+      <label>Client (optionnel)</label>
+      <select id="df-client">${clientOptions}</select>
+      <label>Designation de la ligne</label>
+      <input id="df-designation" placeholder="ex: Prestation de service" required>
+      <label>Quantite</label>
+      <input id="df-quantite" type="number" step="0.001" value="1">
+      <label>Prix unitaire HT (MAD)</label>
+      <input id="df-prix" type="number" step="0.01" required>
+      <label>TVA (%)</label>
+      <input id="df-tva" type="number" step="0.01" value="20">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Creer</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('doc-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/facturation/documents', {
+        method: 'POST',
+        body: JSON.stringify({
+          type: document.getElementById('df-type').value,
+          clientId: document.getElementById('df-client').value || undefined,
+          lignes: [{
+            designation: document.getElementById('df-designation').value,
+            quantite: parseFloat(document.getElementById('df-quantite').value),
+            prixUnitaireHt: parseFloat(document.getElementById('df-prix').value),
+            tauxTva: parseFloat(document.getElementById('df-tva').value),
+          }],
+        }),
+      });
+      closeModal();
+      toast('Document cree.');
+      renderFacturation();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// IMPORT EXCEL (documents commerciaux en masse)
+// ---------------------------------------------------------------------
+async function importerExcel(file, onSuccess) {
+  toast('Import en cours…');
+  try {
+    const resultat = await apiUpload('/facturation/import-excel', file);
+    let message = `${resultat.documentsCrees} document(s) cree(s) depuis le fichier Excel.`;
+    if (resultat.erreurs && resultat.erreurs.length) {
+      message += ` (${resultat.erreurs.length} ligne(s) en erreur — voir la console)`;
+      console.warn('Erreurs import Excel:', resultat.erreurs);
+    }
+    toast(message);
+    if (onSuccess) onSuccess();
+  } catch (err) {
+    toast('Import Excel echoue : ' + err.message, true);
+  }
+}
+
+// ---------------------------------------------------------------------
+// COMPTABILITE
+// ---------------------------------------------------------------------
+async function renderComptabilite() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Comptabilite &amp; TVA</h1><p>Plan comptable, ecritures, declarations TVA</p></div>
+      <button class="btn-secondary" id="init-plan-btn">Initialiser le plan comptable</button>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Plan comptable</h2></div>
+      <table><thead><tr><th>Numero</th><th>Libelle</th><th>Type</th></tr></thead>
+        <tbody id="comptes-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Declaration TVA</h2>
+        <button class="btn-secondary" id="calc-tva-btn">Calculer pour ce mois</button>
+      </div>
+      <table><thead><tr><th>Periode</th><th class="num">Collectee</th><th class="num">Deductible</th><th class="num">A payer</th></tr></thead>
+        <tbody id="tva-body"><tr class="empty-row"><td colspan="4">Aucune declaration.</td></tr></tbody></table>
+    </div>
+  `;
+
+  document.getElementById('init-plan-btn').addEventListener('click', async () => {
+    try { await api('/comptabilite/plan-comptable/initialiser', { method: 'POST' }); toast('Plan comptable initialise.'); load(); }
+    catch (err) { toast(err.message, true); }
+  });
+
+  document.getElementById('calc-tva-btn').addEventListener('click', async () => {
+    const now = new Date();
+    const debut = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const fin = now.toISOString().slice(0, 10);
+    try {
+      await api('/comptabilite/tva/calculer', {
+        method: 'POST',
+        body: JSON.stringify({ periode: debut.slice(0, 7), dateDebut: debut, dateFin: fin }),
+      });
+      toast('Declaration TVA calculee.');
+      load();
+    } catch (err) { toast(err.message, true); }
+  });
+
+  async function load() {
+    try {
+      const comptes = await api('/comptabilite/plan-comptable');
+      document.getElementById('comptes-body').innerHTML = comptes.length
+        ? comptes.map(c => `<tr><td>${c.numeroCompte}</td><td>${escapeHtml(c.libelle)}</td><td>${c.typeCompte || '—'}</td></tr>`).join('')
+        : '<tr class="empty-row"><td colspan="3">Aucun compte. Cliquez sur "Initialiser".</td></tr>';
+
+      const declarations = await api('/comptabilite/tva');
+      document.getElementById('tva-body').innerHTML = declarations.length
+        ? declarations.map(d => `<tr><td>${d.periode}</td><td class="num">${money(d.tvaCollectee)}</td><td class="num">${money(d.tvaDeductible)}</td><td class="num">${money(d.tvaAPayer)}</td></tr>`).join('')
+        : '<tr class="empty-row"><td colspan="4">Aucune declaration.</td></tr>';
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// RH
+// ---------------------------------------------------------------------
+async function renderRh() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Ressources Humaines</h1><p>Employes et demandes de conge</p></div>
+      <button class="btn-secondary" id="new-employe-btn">+ Nouvel employe</button>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Employes</h2></div>
+      <table><thead><tr><th>Nom</th><th>Poste</th><th class="num">Salaire base</th></tr></thead>
+        <tbody id="employes-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Demandes de conge</h2></div>
+      <table><thead><tr><th>Employe</th><th>Type</th><th>Periode</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="conges-body"><tr class="empty-row"><td colspan="5">Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+  document.getElementById('new-employe-btn').addEventListener('click', openEmployeModal);
+
+  async function load() {
+    try {
+      const employes = await api('/rh/employes');
+      document.getElementById('employes-body').innerHTML = employes.length
+        ? employes.map(e => `<tr><td>${escapeHtml(e.nomComplet)}</td><td>${escapeHtml(e.poste || '—')}</td><td class="num">${money(e.salaireBase)} MAD</td></tr>`).join('')
+        : '<tr class="empty-row"><td colspan="3">Aucun employe.</td></tr>';
+
+      const conges = await api('/rh/conges');
+      const tbody = document.getElementById('conges-body');
+      tbody.innerHTML = conges.length
+        ? conges.map(c => `
+            <tr>
+              <td>${escapeHtml(c.employe?.nomComplet || '—')}</td>
+              <td>${c.type}</td>
+              <td>${c.dateDebut} → ${c.dateFin}</td>
+              <td><span class="badge ${c.statut === 'approuve' ? 'ok' : c.statut === 'refuse' ? 'bad' : 'warn'}">${c.statut}</span></td>
+              <td>${c.statut === 'en_attente' ? `<button class="btn-secondary" data-approve="${c.id}">Approuver</button>` : ''}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="5">Aucune demande.</td></tr>';
+
+      tbody.querySelectorAll('button[data-approve]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try { await api(`/rh/conges/${btn.dataset.approve}/approuver`, { method: 'PATCH' }); load(); }
+          catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+function openEmployeModal() {
+  openModal(`
+    <h3>Nouvel employe</h3>
+    <form id="employe-form">
+      <label>Nom complet</label><input id="ef-nom" required>
+      <label>Poste</label><input id="ef-poste">
+      <label>Salaire de base (MAD)</label><input id="ef-salaire" type="number" step="0.01" value="0">
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Creer</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('employe-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/rh/employes', {
+        method: 'POST',
+        body: JSON.stringify({
+          nomComplet: document.getElementById('ef-nom').value,
+          poste: document.getElementById('ef-poste').value || undefined,
+          salaireBase: parseFloat(document.getElementById('ef-salaire').value),
+        }),
+      });
+      closeModal();
+      toast('Employe cree.');
+      renderRh();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// SAV
+// ---------------------------------------------------------------------
+async function renderSav() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Service Apres-Vente</h1><p>Tickets de support client</p></div>
+      <button class="btn-secondary" id="new-ticket-btn">+ Nouveau ticket</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Tous les tickets</h2></div>
+      <table>
+        <thead><tr><th>Sujet</th><th>Priorite</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="tickets-body"><tr class="empty-row"><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('new-ticket-btn').addEventListener('click', openTicketModal);
+
+  async function load() {
+    try {
+      const tickets = await api('/sav/tickets');
+      const tbody = document.getElementById('tickets-body');
+      const badgeFor = (s) => s === 'resolu' || s === 'ferme' ? 'ok' : (s === 'en_cours' ? 'warn' : 'bad');
+      tbody.innerHTML = tickets.length
+        ? tickets.map(t => `
+            <tr>
+              <td>${escapeHtml(t.sujet)}</td>
+              <td>${t.priorite}</td>
+              <td><span class="badge ${badgeFor(t.statut)}">${t.statut}</span></td>
+              <td>${t.statut === 'ouvert' ? `<button class="btn-secondary" data-resolve="${t.id}">Marquer resolu</button>` : ''}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="4">Aucun ticket.</td></tr>';
+
+      tbody.querySelectorAll('button[data-resolve]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await api(`/sav/tickets/${btn.dataset.resolve}/statut`, { method: 'PATCH', body: JSON.stringify({ statut: 'resolu' }) });
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+function openTicketModal() {
+  openModal(`
+    <h3>Nouveau ticket SAV</h3>
+    <form id="ticket-form">
+      <label>Sujet</label><input id="tf-sujet" required>
+      <label>Description</label><textarea id="tf-description" rows="3"></textarea>
+      <label>Priorite</label>
+      <select id="tf-priorite">
+        <option value="basse">Basse</option>
+        <option value="normale" selected>Normale</option>
+        <option value="haute">Haute</option>
+        <option value="urgente">Urgente</option>
+      </select>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Creer</button>
+      </div>
+    </form>
+  `);
+  document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/sav/tickets', {
+        method: 'POST',
+        body: JSON.stringify({
+          sujet: document.getElementById('tf-sujet').value,
+          description: document.getElementById('tf-description').value || undefined,
+          priorite: document.getElementById('tf-priorite').value,
+        }),
+      });
+      closeModal();
+      toast('Ticket cree.');
+      renderSav();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// NOTIFICATIONS
+// ---------------------------------------------------------------------
+async function renderNotifications() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Notifications</h1><p>Alertes et evenements du systeme</p></div>
+      <button class="btn-secondary" id="refresh-alertes-btn">Generer les alertes de stock</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Toutes les notifications</h2></div>
+      <table>
+        <thead><tr><th>Titre</th><th>Message</th><th>Type</th><th></th></tr></thead>
+        <tbody id="notifs-body"><tr class="empty-row"><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+  `;
+
+  document.getElementById('refresh-alertes-btn').addEventListener('click', async () => {
+    try {
+      await api('/notifications/generer-alertes-stock', { method: 'POST' });
+      toast('Alertes de stock regenerees.');
+      renderNotifications();
+    } catch (err) { toast(err.message, true); }
+  });
+
+  async function load() {
+    try {
+      const notifs = await api('/notifications');
+      const tbody = document.getElementById('notifs-body');
+      tbody.innerHTML = notifs.length
+        ? notifs.map(n => `
+            <tr style="${n.lue ? 'opacity:.55' : ''}">
+              <td>${escapeHtml(n.titre)}</td>
+              <td>${escapeHtml(n.message || '—')}</td>
+              <td><span class="badge ${n.type === 'stock_bas' ? 'warn' : 'ok'}">${n.type}</span></td>
+              <td>${n.lue ? '' : `<button class="btn-secondary" data-mark="${n.id}">Marquer lue</button>`}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="4">Aucune notification.</td></tr>';
+
+      tbody.querySelectorAll('button[data-mark]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await api(`/notifications/${btn.dataset.mark}/lue`, { method: 'POST' });
+            load();
+          } catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// IA (previsions + OCR)
+// ---------------------------------------------------------------------
+async function renderIa() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Intelligence Artificielle</h1><p>Previsions de ventes et lecture de documents (OCR)</p></div>
+      <button class="btn-secondary" id="run-prevision-btn">Generer une prevision</button>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Previsions de ventes</h2></div>
+      <table><thead><tr><th>Periode prevue</th><th class="num">Valeur prevue</th><th>Methode</th></tr></thead>
+        <tbody id="previsions-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Lecture de document (OCR)</h2></div>
+      <div style="padding:18px;">
+        <label>Image du document (facture scannee, ticket...)</label>
+        <input type="file" id="ocr-file" accept="image/*">
+        <button class="btn-primary" id="ocr-submit-btn" style="width:auto;padding:9px 18px;margin-top:6px;">Analyser</button>
+        <p id="ocr-status" style="color:var(--ink-soft);font-size:13px;margin-top:10px;"></p>
+      </div>
+      <table><thead><tr><th>Texte extrait</th><th class="num">Confiance</th></tr></thead>
+        <tbody id="ocr-body"><tr class="empty-row"><td colspan="2">Aucune analyse.</td></tr></tbody></table>
+    </div>
+  `;
+
+  document.getElementById('run-prevision-btn').addEventListener('click', async () => {
+    try {
+      await api('/ia/previsions/ventes', { method: 'POST', body: JSON.stringify({}) });
+      toast('Prevision generee.');
+      loadPrevisions();
+    } catch (err) { toast(err.message, true); }
+  });
+
+  document.getElementById('ocr-submit-btn').addEventListener('click', async () => {
+    const fileInput = document.getElementById('ocr-file');
+    const statusEl = document.getElementById('ocr-status');
+    if (!fileInput.files[0]) { toast('Choisissez une image d\'abord.', true); return; }
+    statusEl.textContent = 'Analyse en cours (peut prendre quelques secondes)…';
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        await api('/ia/ocr/lire-document', { method: 'POST', body: JSON.stringify({ imageBase64: reader.result }) });
+        statusEl.textContent = '';
+        toast('Document analyse.');
+        loadOcr();
+      } catch (err) { statusEl.textContent = ''; toast(err.message, true); }
+    };
+    reader.readAsDataURL(fileInput.files[0]);
+  });
+
+  async function loadPrevisions() {
+    try {
+      const previsions = await api('/ia/previsions');
+      document.getElementById('previsions-body').innerHTML = previsions.length
+        ? previsions.map(p => `<tr><td>${p.periode}</td><td class="num">${money(p.valeurPrevue)} MAD</td><td>${p.donneesJson?.methode || '—'}</td></tr>`).join('')
+        : '<tr class="empty-row"><td colspan="3">Aucune prevision generee.</td></tr>';
+    } catch (err) { toast(err.message, true); }
+  }
+
+  async function loadOcr() {
+    try {
+      const analyses = await api('/ia/ocr/analyses');
+      document.getElementById('ocr-body').innerHTML = analyses.length
+        ? analyses.map(a => `<tr><td>${escapeHtml((a.texteExtrait || '').slice(0, 120))}${(a.texteExtrait || '').length > 120 ? '…' : ''}</td><td class="num">${a.confiance ? a.confiance.toFixed(1) + '%' : '—'}</td></tr>`).join('')
+        : '<tr class="empty-row"><td colspan="2">Aucune analyse.</td></tr>';
+    } catch (err) { toast(err.message, true); }
+  }
+
+  loadPrevisions();
+  loadOcr();
+}
+
+// ---------------------------------------------------------------------
+// DGI (Facturation Electronique)
+// ---------------------------------------------------------------------
+async function renderDgi() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Facturation Electronique (DGI)</h1><p>Structure locale (UUID + QR code) preparee pour la DGI</p></div>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Generer une structure DGI pour une facture</h2></div>
+      <div style="padding:18px;">
+        <label>Facture</label>
+        <select id="dgi-document"></select>
+        <button class="btn-primary" id="dgi-generer-btn" style="width:auto;padding:9px 18px;margin-top:6px;">Generer UUID + QR code</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Structures generees</h2></div>
+      <table><thead><tr><th>UUID DGI</th><th>Statut</th><th>QR Code</th></tr></thead>
+        <tbody id="dgi-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+    <p style="color:var(--ink-soft);font-size:13px;margin-top:16px;">
+      Note : la soumission reelle a la DGI necessite les specifications officielles
+      et des identifiants qui ne sont pas encore configures. La structure locale
+      (UUID, QR code) est prete a etre branchee des que ces elements seront disponibles.
+    </p>
+  `;
+
+  try {
+    const factures = await api('/facturation/documents?type=facture');
+    document.getElementById('dgi-document').innerHTML = factures.length
+      ? factures.map(f => `<option value="${f.id}">${escapeHtml(f.numero)} (${money(f.totalTtc)} MAD)</option>`).join('')
+      : '<option value="">Aucune facture disponible</option>';
+  } catch (err) { toast(err.message, true); }
+
+  document.getElementById('dgi-generer-btn').addEventListener('click', async () => {
+    const documentId = document.getElementById('dgi-document').value;
+    if (!documentId) { toast('Aucune facture selectionnee.', true); return; }
+    try {
+      await api('/dgi/structure', { method: 'POST', body: JSON.stringify({ documentId }) });
+      toast('Structure DGI generee.');
+      load();
+    } catch (err) { toast(err.message, true); }
+  });
+
+  async function load() {
+    try {
+      const structures = await api('/dgi');
+      document.getElementById('dgi-body').innerHTML = structures.length
+        ? structures.map(s => `
+            <tr>
+              <td style="font-family:var(--mono);font-size:12px;">${s.uuidDgi}</td>
+              <td><span class="badge warn">${s.statutDgi}</span></td>
+              <td>${s.qrCode ? `<img src="${s.qrCode}" width="50" height="50">` : '—'}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="3">Aucune structure generee.</td></tr>';
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// SAUVEGARDES
+// ---------------------------------------------------------------------
+async function renderSauvegardes() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Sauvegardes</h1><p>Sauvegardes de la base de donnees (pg_dump)</p></div>
+      <button class="btn-secondary" id="new-backup-btn">Declencher une sauvegarde</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Historique</h2></div>
+      <table><thead><tr><th>Date</th><th>Statut</th><th class="num">Taille</th><th>Google Drive</th></tr></thead>
+        <tbody id="backups-body"><tr class="empty-row"><td colspan="4">Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+
+  document.getElementById('new-backup-btn').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    e.target.textContent = 'Sauvegarde en cours…';
+    try {
+      await api('/sauvegardes', { method: 'POST' });
+      toast('Sauvegarde terminee.');
+      load();
+    } catch (err) { toast(err.message, true); }
+    finally { e.target.disabled = false; e.target.textContent = 'Declencher une sauvegarde'; }
+  });
+
+  async function load() {
+    try {
+      const backups = await api('/sauvegardes');
+      document.getElementById('backups-body').innerHTML = backups.length
+        ? backups.map(b => `
+            <tr>
+              <td>${new Date(b.createdAt).toLocaleString('fr-FR')}</td>
+              <td><span class="badge ${b.statut === 'reussie' ? 'ok' : 'bad'}">${b.statut}</span></td>
+              <td class="num">${b.tailleOctets ? (b.tailleOctets / 1024).toFixed(1) + ' Ko' : '—'}</td>
+              <td>${b.googleDriveUrl ? `<a href="${b.googleDriveUrl}" target="_blank" rel="noopener">Voir sur Drive</a>` : '<span style="color:var(--ink-soft);">Local uniquement</span>'}</td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="4">Aucune sauvegarde.</td></tr>';
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// PLUGINS
+// ---------------------------------------------------------------------
+async function renderPlugins() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Plugins &amp; Integrations</h1><p>Catalogue et connecteurs installes</p></div>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Catalogue disponible</h2></div>
+      <table><thead><tr><th>Nom</th><th>Description</th><th></th></tr></thead>
+        <tbody id="catalogue-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Installes pour cette entreprise</h2></div>
+      <table><thead><tr><th>Code</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="installes-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+
+  async function load() {
+    try {
+      const [catalogue, installes] = await Promise.all([api('/plugins/catalogue'), api('/plugins')]);
+      document.getElementById('catalogue-body').innerHTML = catalogue.map(p => `
+        <tr>
+          <td>${escapeHtml(p.nom)}</td>
+          <td>${escapeHtml(p.description)}</td>
+          <td>${installes.some(i => i.codePlugin === p.code) ? '<span class="badge ok">Installe</span>' : `<button class="btn-secondary" data-install="${p.code}">Installer</button>`}</td>
+        </tr>`).join('');
+
+      document.getElementById('installes-body').innerHTML = installes.length
+        ? installes.map(i => `
+            <tr>
+              <td>${escapeHtml(i.codePlugin)}</td>
+              <td><span class="badge ${i.actif ? 'ok' : 'bad'}">${i.actif ? 'Actif' : 'Inactif'}</span></td>
+              <td><button class="btn-secondary" data-toggle="${i.id}" data-actif="${i.actif}">${i.actif ? 'Desactiver' : 'Activer'}</button></td>
+            </tr>`).join('')
+        : '<tr class="empty-row"><td colspan="3">Aucun plugin installe.</td></tr>';
+
+      document.querySelectorAll('button[data-install]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try { await api('/plugins', { method: 'POST', body: JSON.stringify({ codePlugin: btn.dataset.install }) }); toast('Plugin installe.'); load(); }
+          catch (err) { toast(err.message, true); }
+        });
+      });
+      document.querySelectorAll('button[data-toggle]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const action = btn.dataset.actif === 'true' ? 'desactiver' : 'activer';
+          try { await api(`/plugins/${btn.dataset.toggle}/${action}`, { method: 'PATCH' }); load(); }
+          catch (err) { toast(err.message, true); }
+        });
+      });
+    } catch (err) { toast(err.message, true); }
+  }
+  load();
+}
+
+// ---------------------------------------------------------------------
+// AUDIT
+// ---------------------------------------------------------------------
+async function renderAudit() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Journal d'audit</h1><p>Tracabilite de toutes les actions effectuees dans le systeme</p></div>
+    </div>
+    <div class="panel">
+      <table><thead><tr><th>Date</th><th>Action</th><th>IP</th></tr></thead>
+        <tbody id="audit-body"><tr class="empty-row"><td colspan="3">Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+  try {
+    const entries = await api('/audit');
+    document.getElementById('audit-body').innerHTML = entries.length
+      ? entries.map(e => `
+          <tr>
+            <td>${new Date(e.createdAt).toLocaleString('fr-FR')}</td>
+            <td style="font-family:var(--mono);font-size:12px;">${escapeHtml(e.action)}</td>
+            <td>${escapeHtml(e.ipAdresse || '—')}</td>
+          </tr>`).join('')
+      : '<tr class="empty-row"><td colspan="3">Aucune entree.</td></tr>';
+  } catch (err) { toast(err.message, true); }
+}
+
+// ---------------------------------------------------------------------
+// ADMINISTRATION
+// ---------------------------------------------------------------------
+async function renderAdministration() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Administration</h1><p>Informations et parametres de l'entreprise</p></div>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head"><h2>Mise a jour de mes informations</h2></div>
+      <form id="entreprise-form" style="padding:20px 24px;display:grid;grid-template-columns:1fr 1fr;gap:0 20px;">
+        <div style="grid-column:1/-1;"><label>Raison Sociale</label><input id="ef-nom" placeholder="Nom de votre societe"></div>
+
+        <div style="grid-column:1/-1;display:flex;gap:24px;align-items:center;margin:4px 0 8px;">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:normal;">
+            <input type="radio" name="ef-type-entreprise" id="ef-type-entreprise-ste" value="entreprise" checked> Je suis Une entreprise
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:normal;">
+            <input type="radio" name="ef-type-entreprise" id="ef-type-entreprise-auto" value="auto_entrepreneur"> Un auto-entrepreneur
+          </label>
+        </div>
+
+        <div>
+          <label>Votre logo</label>
+          <input id="ef-logo" type="file" accept="image/*">
+          <div id="ef-logo-preview" style="margin-top:8px;"></div>
+        </div>
+        <div>
+          <label>Votre cachet</label>
+          <input id="ef-cachet" type="file" accept="image/*">
+          <div id="ef-cachet-preview" style="margin-top:8px;"></div>
+        </div>
+
+        <div>
+          <label>Nombre d'employes</label>
+          <select id="ef-nombre-employes">
+            <option value="1-5">1 a 5</option>
+            <option value="6-10">6 a 10</option>
+            <option value="11-50">11 a 50</option>
+            <option value="51-200">51 a 200</option>
+            <option value="200+">Plus de 200</option>
+          </select>
+        </div>
+        <div></div>
+
+        <div>
+          <label>Civilite Responsable</label>
+          <select id="ef-civilite-responsable">
+            <option value="M.">M.</option>
+            <option value="Mme">Mme</option>
+          </select>
+        </div>
+        <div><label>Nom responsable</label><input id="ef-nom-responsable" placeholder="Nom du responsable"></div>
+        <div><label>GSM responsable</label><input id="ef-gsm-responsable" placeholder="0611223344"></div>
+        <div><label>Fax</label><input id="ef-fax" placeholder="0537112233"></div>
+
+        <div><label>Devise</label><input id="ef-devise" placeholder="MAD"></div>
+        <div><label>Site web</label><input id="ef-site-web" placeholder="www.example.ma"></div>
+        <div><label>ICE</label><input id="ef-ice"></div>
+        <div><label>Identifiant fiscal (IF)</label><input id="ef-if"></div>
+        <div><label>Registre de commerce (RC)</label><input id="ef-rc"></div>
+        <div><label>Taxe professionnelle (Patente)</label><input id="ef-patente"></div>
+        <div><label>CNSS</label><input id="ef-cnss"></div>
+        <div><label>Numero de compte</label><input id="ef-numero-compte" placeholder="11223344556677889900"></div>
+        <div><label>Telephone</label><input id="ef-telephone"></div>
+        <div><label>Email</label><input id="ef-email" type="email"></div>
+        <div style="grid-column:1/-1;"><label>Adresse</label><input id="ef-adresse"></div>
+        <div style="grid-column:1/-1;margin-top:8px;">
+          <button class="btn-primary" type="submit" style="width:auto;padding:11px 24px;">Enregistrer les informations</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="panel-head">
+        <h2>Utilisateurs</h2>
+        <button class="btn-secondary" id="new-user-btn">+ Nouvel utilisateur</button>
+      </div>
+      <table>
+        <thead><tr><th>Nom</th><th>Email</th><th>Role</th><th>Statut</th></tr></thead>
+        <tbody id="users-body"><tr class="empty-row"><td colspan="4">Chargement…</td></tr></tbody>
+      </table>
+    </div>
+
+    <details class="login-advanced" style="margin-top:0;">
+      <summary style="color:var(--ink-soft);">Parametres avances (JSON libre, usage technique)</summary>
+      <div class="panel" style="margin-top:12px;">
+        <div style="padding:18px;">
+          <textarea id="params-json" rows="8" style="font-family:var(--mono);font-size:13px;background:#fff;color:var(--ink);"></textarea>
+          <button class="btn-secondary" id="save-params-btn" style="width:auto;padding:9px 18px;margin-top:10px;">Enregistrer le JSON</button>
+        </div>
+      </div>
+    </details>
+  `;
+
+  let extraParams = {};
+  try {
+    const entreprise = await api('/entreprises/moi');
+    document.getElementById('ef-nom').value = entreprise.nom || '';
+    document.getElementById('ef-devise').value = entreprise.devise || 'MAD';
+    document.getElementById('ef-ice').value = entreprise.ice || '';
+    document.getElementById('ef-if').value = entreprise.ifFiscal || '';
+    document.getElementById('ef-rc').value = entreprise.rc || '';
+    document.getElementById('ef-patente').value = entreprise.patente || '';
+    document.getElementById('ef-cnss').value = entreprise.cnss || '';
+    document.getElementById('ef-telephone').value = entreprise.telephone || '';
+    document.getElementById('ef-email').value = entreprise.email || '';
+    document.getElementById('ef-adresse').value = entreprise.adresse || '';
+  } catch (err) { toast(err.message, true); }
+
+  try {
+    const params = await api('/administration/parametres');
+    extraParams = params.parametres || {};
+    const societe = extraParams.societe || {};
+    if (societe.typeEntreprise === 'auto_entrepreneur') {
+      document.getElementById('ef-type-entreprise-auto').checked = true;
+    }
+    if (societe.nombreEmployes) document.getElementById('ef-nombre-employes').value = societe.nombreEmployes;
+    if (societe.civiliteResponsable) document.getElementById('ef-civilite-responsable').value = societe.civiliteResponsable;
+    document.getElementById('ef-nom-responsable').value = societe.nomResponsable || '';
+    document.getElementById('ef-gsm-responsable').value = societe.gsmResponsable || '';
+    document.getElementById('ef-fax').value = societe.fax || '';
+    document.getElementById('ef-site-web').value = societe.siteWeb || '';
+    document.getElementById('ef-numero-compte').value = societe.numeroCompte || '';
+    if (societe.logoDataUrl) {
+      document.getElementById('ef-logo-preview').innerHTML =
+        `<img src="${societe.logoDataUrl}" alt="Logo actuel" style="max-height:60px;max-width:160px;border:1px solid var(--line);border-radius:6px;padding:4px;">`;
+    }
+    if (societe.cachetDataUrl) {
+      document.getElementById('ef-cachet-preview').innerHTML =
+        `<img src="${societe.cachetDataUrl}" alt="Cachet actuel" style="max-height:60px;max-width:160px;border:1px solid var(--line);border-radius:6px;padding:4px;">`;
+    }
+  } catch (err) { /* pas grave si absent au premier lancement */ }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  document.getElementById('entreprise-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/entreprises/moi', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          nom: document.getElementById('ef-nom').value,
+          devise: document.getElementById('ef-devise').value || undefined,
+          ice: document.getElementById('ef-ice').value || undefined,
+          ifFiscal: document.getElementById('ef-if').value || undefined,
+          rc: document.getElementById('ef-rc').value || undefined,
+          patente: document.getElementById('ef-patente').value || undefined,
+          cnss: document.getElementById('ef-cnss').value || undefined,
+          telephone: document.getElementById('ef-telephone').value || undefined,
+          email: document.getElementById('ef-email').value || undefined,
+          adresse: document.getElementById('ef-adresse').value || undefined,
+        }),
+      });
+
+      const logoFile = document.getElementById('ef-logo').files[0];
+      const cachetFile = document.getElementById('ef-cachet').files[0];
+      const societe = { ...(extraParams.societe || {}) };
+      societe.typeEntreprise = document.getElementById('ef-type-entreprise-auto').checked ? 'auto_entrepreneur' : 'entreprise';
+      societe.nombreEmployes = document.getElementById('ef-nombre-employes').value;
+      societe.civiliteResponsable = document.getElementById('ef-civilite-responsable').value;
+      societe.nomResponsable = document.getElementById('ef-nom-responsable').value;
+      societe.gsmResponsable = document.getElementById('ef-gsm-responsable').value;
+      societe.fax = document.getElementById('ef-fax').value;
+      societe.siteWeb = document.getElementById('ef-site-web').value;
+      societe.numeroCompte = document.getElementById('ef-numero-compte').value;
+      if (logoFile) societe.logoDataUrl = await readFileAsDataUrl(logoFile);
+      if (cachetFile) societe.cachetDataUrl = await readFileAsDataUrl(cachetFile);
+
+      extraParams.societe = societe;
+      await api('/administration/parametres', { method: 'PATCH', body: JSON.stringify({ parametres: extraParams }) });
+
+      toast('Informations de l\'entreprise enregistrees.');
+    } catch (err) { toast(err.message, true); }
+  });
+
+  document.getElementById('new-user-btn').addEventListener('click', openUserModal);
+  await loadUsers();
+
+  try {
+    const params = await api('/administration/parametres');
+    document.getElementById('params-json').value = JSON.stringify(params.parametres || {}, null, 2);
+  } catch (err) { /* silencieux, section avancee optionnelle */ }
+
+  document.getElementById('save-params-btn').addEventListener('click', async () => {
+    try {
+      const parsed = JSON.parse(document.getElementById('params-json').value);
+      await api('/administration/parametres', { method: 'PATCH', body: JSON.stringify({ parametres: parsed }) });
+      toast('Parametres avances enregistres.');
+    } catch (err) {
+      toast(err instanceof SyntaxError ? 'JSON invalide.' : err.message, true);
+    }
+  });
+}
+
+async function loadUsers() {
+  try {
+    const users = await api('/users');
+    document.getElementById('users-body').innerHTML = users.length
+      ? users.map(u => `
+          <tr>
+            <td>${escapeHtml(u.nomComplet)}</td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>${escapeHtml(u.role?.nom || '—')}</td>
+            <td><span class="badge ${u.actif ? 'ok' : 'bad'}">${u.actif ? 'Actif' : 'Inactif'}</span></td>
+          </tr>`).join('')
+      : '<tr class="empty-row"><td colspan="4">Aucun utilisateur.</td></tr>';
+  } catch (err) { toast(err.message, true); }
+}
+
+async function openUserModal() {
+  let roles = [];
+  try { roles = await api('/users/roles'); } catch (e) { /* peut echouer si aucun role, pas bloquant */ }
+  const roleOptions = ['<option value="">Sans role (aucun acces particulier)</option>']
+    .concat(roles.map(r => `<option value="${r.id}">${escapeHtml(r.nom)}</option>`)).join('');
+
+  openModal(`
+    <h3>Nouvel utilisateur</h3>
+    <form id="user-form">
+      <label>Nom complet</label><input id="uf-nom" required>
+      <label>Email (identifiant de connexion)</label><input id="uf-email" type="email" required>
+      <label>Mot de passe (8 caracteres minimum)</label><input id="uf-motdepasse" type="password" minlength="8" required>
+      <label>Telephone</label><input id="uf-telephone">
+      <label>Role</label><select id="uf-role">${roleOptions}</select>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+        <button type="submit" class="btn-primary">Creer</button>
+      </div>
+    </form>
+  `);
+
+  document.getElementById('user-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api('/users', {
+        method: 'POST',
+        body: JSON.stringify({
+          nomComplet: document.getElementById('uf-nom').value,
+          email: document.getElementById('uf-email').value,
+          motDePasse: document.getElementById('uf-motdepasse').value,
+          telephone: document.getElementById('uf-telephone').value || undefined,
+          roleId: document.getElementById('uf-role').value || undefined,
+        }),
+      });
+      closeModal();
+      toast('Utilisateur cree. Il peut se connecter avec l\'email et le mot de passe fournis.');
+      loadUsers();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+// ---------------------------------------------------------------------
+// MENU MOBILE (tiroir de navigation)
+// ---------------------------------------------------------------------
+function initMobileMenu() {
+  const btn = document.getElementById('mobile-menu-btn');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+
+  const ouvrir = () => { sidebar.classList.add('open'); overlay.classList.add('open'); };
+  const fermer = () => { sidebar.classList.remove('open'); overlay.classList.remove('open'); };
+
+  btn.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? fermer() : ouvrir();
+  });
+  overlay.addEventListener('click', fermer);
+  // Ferme le tiroir automatiquement apres avoir choisi une page (mobile)
+  document.getElementById('side-nav').addEventListener('click', (e) => {
+    if (e.target.closest('button[data-page]')) fermer();
+  });
+
+  // Filet de securite : force l'affichage/masquage du bouton selon la
+  // largeur reelle de la fenetre, independamment d'un eventuel probleme de
+  // media query CSS (cache navigateur, etc.). Recalcule a chaque redimensionnement.
+  const synchroniserAffichage = () => {
+    const mobile = window.innerWidth <= 860;
+    btn.style.display = mobile ? 'flex' : 'none';
+    if (!mobile) fermer();
+  };
+  synchroniserAffichage();
+  window.addEventListener('resize', synchroniserAffichage);
+}
+
+// ---------------------------------------------------------------------
+// CENTRE D'ALERTES (notifications + cheques a echeance, visible partout)
+// ---------------------------------------------------------------------
+function initAlertsCenter() {
+  const bell = document.getElementById('alerts-bell');
+  const panel = document.getElementById('alerts-panel');
+
+  bell.addEventListener('click', () => {
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) refreshAlertsCenter();
+  });
+  document.addEventListener('click', (e) => {
+    if (!panel.contains(e.target) && e.target !== bell && panel.classList.contains('open')) {
+      panel.classList.remove('open');
+    }
+  });
+  document.getElementById('alerts-refresh-btn').addEventListener('click', async () => {
+    try {
+      await api('/notifications/generer-toutes-les-alertes', { method: 'POST' });
+    } catch (e) { /* silencieux : pas bloquant si l'utilisateur n'a pas la permission */ }
+    refreshAlertsCenter();
+  });
+
+  // Regenere les alertes (stock bas + cheques a echeance) automatiquement
+  // au demarrage, puis toutes les 60 secondes tant que la session est active.
+  regenerateAndRefresh();
+  setInterval(regenerateAndRefresh, 60000);
+}
+
+async function regenerateAndRefresh() {
+  try { await api('/notifications/generer-toutes-les-alertes', { method: 'POST' }); }
+  catch (e) { /* silencieux */ }
+  refreshAlertsCenter();
+}
+
+async function refreshAlertsCenter() {
+  try {
+    const notifs = await api('/notifications');
+    const nonLues = notifs.filter(n => !n.lue);
+    const badge = document.getElementById('alerts-badge');
+    if (nonLues.length > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = nonLues.length > 9 ? '9+' : nonLues.length;
+    } else {
+      badge.style.display = 'none';
+    }
+
+    const list = document.getElementById('alerts-list');
+    const aAfficher = notifs.slice(0, 30);
+    list.innerHTML = aAfficher.length
+      ? aAfficher.map(n => `
+          <div class="alert-item ${n.type}" style="${n.lue ? 'opacity:.5' : ''}" data-id="${n.id}">
+            <span class="dot"></span>
+            <div class="body">
+              <div class="t">${escapeHtml(n.titre)}</div>
+              <div class="m">${escapeHtml(n.message || '')}</div>
+            </div>
+            ${n.lue ? '' : `<button data-mark="${n.id}">Lu</button>`}
+          </div>`).join('')
+      : '<p class="alerts-empty">Aucune alerte pour le moment.</p>';
+
+    list.querySelectorAll('button[data-mark]').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+          await api(`/notifications/${btn.dataset.mark}/lue`, { method: 'POST' });
+          refreshAlertsCenter();
+        } catch (err) { toast(err.message, true); }
+      });
+    });
+  } catch (err) {
+    // Silencieux : l'utilisateur peut ne pas avoir la permission notifications.lire
+  }
+}
+
+// ---------------------------------------------------------------------
+// UTIL
+// ---------------------------------------------------------------------
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]));
+}
+
+// ---------------------------------------------------------------------
+// BOOT
+// ---------------------------------------------------------------------
+document.getElementById('api-url').value = state.apiUrl;
+initLoginParticles();
+if (state.token && state.user) {
+  enterApp();
+}
+</script>
+</body>
+</html>
