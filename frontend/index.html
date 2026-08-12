@@ -308,6 +308,20 @@
   .stat-card .num{font-family:var(--mono);font-size:26px;font-weight:700;color:#1f5fc4;}
   .stat-card .lbl{font-size:12px;color:#8892a6;margin-top:4px;}
 
+  .dash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  .dash-card{border-radius:14px;padding:18px 20px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .dash-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .dash-card-title{font-size:13px;font-weight:600;opacity:.92;}
+  .dash-card-icon{opacity:.9;}
+  .dash-card-value{font-family:var(--mono);font-size:24px;font-weight:700;}
+  .dash-card-sub{font-size:12px;opacity:.85;margin-top:6px;background:rgba(255,255,255,.18);display:inline-block;padding:2px 8px;border-radius:6px;}
+  .dash-mini-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 20px 8px;}
+  .dash-mini{background:var(--bg-soft,#f7f8fb);border-radius:10px;padding:14px;text-align:center;}
+  .dash-mini-num{font-family:var(--mono);font-size:20px;font-weight:700;}
+  .dash-mini-lbl{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  @media(max-width:900px){ .dash-grid{grid-template-columns:repeat(2,1fr);} .dash-mini-stats{grid-template-columns:repeat(2,1fr);} }
+  @media(max-width:560px){ .dash-grid{grid-template-columns:1fr;} }
+
   .panel{
     background:#fff;
     border:none;
@@ -863,40 +877,158 @@ document.getElementById('modal-overlay').addEventListener('click', (e) => {
 // ---------------------------------------------------------------------
 // DASHBOARD
 // ---------------------------------------------------------------------
+const DASHBOARD_ICONS = {
+  ventes: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>',
+  benefice: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg>',
+  capital: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.3 7l8.7 5 8.7-5M12 22V12"/></svg>',
+  retours: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  depenses: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2.5 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>',
+  dettes: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>',
+};
+
+function dashboardCard(key, color, title, value, sublabel) {
+  return `
+    <div class="dash-card" style="background:${color};">
+      <div class="dash-card-top">
+        <span class="dash-card-title">${title}</span>
+        <span class="dash-card-icon">${DASHBOARD_ICONS[key]}</span>
+      </div>
+      <div class="dash-card-value">${value}</div>
+      <div class="dash-card-sub">${sublabel}</div>
+    </div>`;
+}
+
+function startOfPeriod(period) {
+  const now = new Date();
+  if (period === 'semaine') { const d = new Date(now); d.setDate(d.getDate() - 7); return d; }
+  if (period === 'annee') { return new Date(now.getFullYear(), 0, 1); }
+  if (period === 'tout') { return new Date(2000, 0, 1); }
+  return new Date(now.getFullYear(), now.getMonth(), 1); // mois (defaut)
+}
+
 async function renderDashboard() {
   const content = document.getElementById('content');
   content.innerHTML = `
     <div class="page-header">
       <div><h1>Tableau de bord</h1><p>Vue d'ensemble de votre entreprise</p></div>
     </div>
-    <div class="cards-row" id="stat-cards">
-      <div class="stat-card"><div class="num">…</div><div class="lbl">Produits</div></div>
-      <div class="stat-card"><div class="num">…</div><div class="lbl">Clients</div></div>
-      <div class="stat-card"><div class="num">…</div><div class="lbl">Ventes</div></div>
-      <div class="stat-card"><div class="num">…</div><div class="lbl">Notifications non lues</div></div>
+
+    <div class="panel" style="margin-bottom:16px;padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <label style="font-size:13px;color:var(--ink-soft);">Periode</label>
+      <select id="dash-periode" style="width:auto;">
+        <option value="mois" selected>Ce Mois</option>
+        <option value="semaine">Cette semaine</option>
+        <option value="annee">Cette annee</option>
+        <option value="tout">Tout</option>
+      </select>
+      <label style="font-size:13px;color:var(--ink-soft);margin-left:12px;">Statut des ventes</label>
+      <select id="dash-statut" style="width:auto;">
+        <option value="">Tous les statuts</option>
+        <option value="brouillon">Brouillon</option>
+        <option value="validee">Validee</option>
+        <option value="payee">Payee</option>
+        <option value="annulee">Annulee</option>
+      </select>
     </div>
-    <div class="panel">
+
+    <div class="dash-grid" id="dash-cards"></div>
+
+    <div class="panel" style="margin-top:20px;">
+      <div class="panel-head"><h2>Activite Journaliere</h2></div>
+      <p style="padding:0 20px;color:var(--ink-soft);font-size:13px;margin-top:-4px;">Vue d'ensemble des ventes, retours et revenus par jour</p>
+      <div class="dash-mini-stats" id="dash-mini-stats"></div>
+      <div id="dash-chart" style="padding:20px;"></div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
       <div class="panel-head"><h2>Produits en alerte de stock</h2></div>
       <table><tbody id="alerte-body"><tr class="empty-row"><td>Chargement…</td></tr></tbody></table>
     </div>
   `;
 
+  document.getElementById('dash-periode').addEventListener('change', loadDashboardData);
+  document.getElementById('dash-statut').addEventListener('change', loadDashboardData);
+
+  await loadDashboardData();
+
   try {
-    const [produits, clients, ventes, notifs, alertes] = await Promise.all([
-      api('/produits'), api('/clients'), api('/ventes'), api('/notifications?nonLues=true'), api('/produits/alertes'),
-    ]);
-    state.cache.produits = produits; state.cache.clients = clients; state.cache.ventes = ventes;
-
-    const cards = document.querySelectorAll('#stat-cards .stat-card .num');
-    cards[0].textContent = produits.length;
-    cards[1].textContent = clients.length;
-    cards[2].textContent = ventes.length;
-    cards[3].textContent = notifs.length;
-
+    const alertes = await api('/produits/alertes');
     const tbody = document.getElementById('alerte-body');
     tbody.innerHTML = alertes.length
       ? alertes.map(p => `<tr><td>${escapeHtml(p.nom)}</td><td class="num">seuil: ${p.seuilAlerte}</td></tr>`).join('')
       : '<tr class="empty-row"><td>Aucun produit en alerte pour le moment.</td></tr>';
+  } catch (err) { /* non bloquant */ }
+}
+
+async function loadDashboardData() {
+  const periode = document.getElementById('dash-periode').value;
+  const statutFiltre = document.getElementById('dash-statut').value;
+  const depuis = startOfPeriod(periode);
+
+  try {
+    const [ventesAll, produits, clients, depenses] = await Promise.all([
+      api('/ventes'), api('/produits'), api('/clients'), api('/depenses'),
+    ]);
+    state.cache.produits = produits; state.cache.clients = clients;
+
+    const ventesPeriode = ventesAll.filter(v => new Date(v.dateVente || v.createdAt) >= depuis && (!statutFiltre || v.statut === statutFiltre));
+    const ventesValables = ventesPeriode.filter(v => v.statut !== 'annulee');
+    const ventesAnnulees = ventesPeriode.filter(v => v.statut === 'annulee');
+    const depensesPeriode = depenses.filter(d => new Date(d.dateDepense) >= depuis);
+
+    const totalVentesTtc = ventesValables.reduce((s, v) => s + Number(v.totalTtc || 0), 0);
+    const totalVentesHt = ventesValables.reduce((s, v) => s + Number(v.totalHt || 0), 0);
+    const totalDepenses = depensesPeriode.reduce((s, d) => s + Number(d.montant || 0), 0);
+    const depensesPro = depensesPeriode.filter(d => d.categorie === 'Professionnelle').length;
+    const depensesPerso = depensesPeriode.filter(d => d.categorie === 'Personnelle').length;
+    const beneficeNet = totalVentesHt - totalDepenses;
+    const capitalInvesti = produits.filter(p => p.actif).reduce((s, p) => s + Number(p.prixAchatHt || 0), 0);
+    const clientsDebiteurs = clients.filter(c => Number(c.solde) > 0);
+    const dettesClients = clientsDebiteurs.reduce((s, c) => s + Number(c.solde), 0);
+
+    document.getElementById('dash-cards').innerHTML = [
+      dashboardCard('ventes', 'linear-gradient(135deg,#2563eb,#1d4ed8)', 'Ventes', money(totalVentesTtc) + ' DH', `${ventesValables.length} ventes`),
+      dashboardCard('benefice', 'linear-gradient(135deg,#9333ea,#7e22ce)', 'Benefice Net', money(beneficeNet) + ' DH', 'Marge calculee'),
+      dashboardCard('capital', 'linear-gradient(135deg,#16a34a,#15803d)', 'Capital Investi', money(capitalInvesti) + ' DH', `${produits.length} produits`),
+      dashboardCard('retours', 'linear-gradient(135deg,#dc2626,#b91c1c)', 'Retours', String(ventesAnnulees.length), `${ventesAnnulees.length} commandes`),
+      dashboardCard('depenses', 'linear-gradient(135deg,#ea580c,#c2410c)', 'Depenses', money(totalDepenses) + ' DH', `${depensesPro} pro + ${depensesPerso} perso`),
+      dashboardCard('dettes', 'linear-gradient(135deg,#d97706,#b45309)', 'Dettes Clients', money(dettesClients) + ' DH', `${clientsDebiteurs.length} clients`),
+    ].join('');
+
+    // --- Activite journaliere : regroupement par jour ---
+    const parJour = {};
+    ventesPeriode.forEach(v => {
+      const jour = (v.dateVente || v.createdAt || '').slice(0, 10);
+      if (!jour) return;
+      if (!parJour[jour]) parJour[jour] = { ventes: 0, retours: 0, revenu: 0 };
+      if (v.statut === 'annulee') parJour[jour].retours += 1;
+      else { parJour[jour].ventes += 1; parJour[jour].revenu += Number(v.totalTtc || 0); }
+    });
+    const jours = Object.keys(parJour).sort();
+    const totalRevenuJournalier = jours.reduce((s, j) => s + parJour[j].revenu, 0);
+
+    document.getElementById('dash-mini-stats').innerHTML = `
+      <div class="dash-mini"><div class="dash-mini-num" style="color:#2563eb;">${ventesValables.length}</div><div class="dash-mini-lbl">Total Ventes</div></div>
+      <div class="dash-mini"><div class="dash-mini-num" style="color:#dc2626;">${ventesAnnulees.length}</div><div class="dash-mini-lbl">Total Retours</div></div>
+      <div class="dash-mini"><div class="dash-mini-num" style="color:#16a34a;">${money(totalRevenuJournalier)} DH</div><div class="dash-mini-lbl">Total Revenus</div></div>
+      <div class="dash-mini"><div class="dash-mini-num" style="color:#7c3aed;">${jours.length}</div><div class="dash-mini-lbl">Jours Actifs</div></div>
+    `;
+
+    const chartEl = document.getElementById('dash-chart');
+    if (!jours.length) {
+      chartEl.innerHTML = '<p style="text-align:center;color:var(--ink-soft);padding:30px 0;">Pas assez de donnees pour afficher le graphique.<br>Effectuez quelques ventes pour voir l&#39;evolution.</p>';
+    } else {
+      const maxRevenu = Math.max(...jours.map(j => parJour[j].revenu), 1);
+      const barW = Math.max(24, Math.min(48, Math.floor(680 / jours.length)));
+      const bars = jours.map(j => {
+        const h = Math.round((parJour[j].revenu / maxRevenu) * 120) || 2;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div title="${j} : ${money(parJour[j].revenu)} DH" style="width:${barW - 8}px;height:${h}px;background:linear-gradient(180deg,#3b82f6,#1d4ed8);border-radius:4px 4px 0 0;"></div>
+          <div style="font-size:10px;color:var(--ink-soft);writing-mode:vertical-rl;transform:rotate(180deg);height:40px;">${j.slice(5)}</div>
+        </div>`;
+      }).join('');
+      chartEl.innerHTML = `<div style="display:flex;align-items:flex-end;gap:6px;overflow-x:auto;padding-bottom:8px;">${bars}</div>`;
+    }
   } catch (err) {
     toast(err.message, true);
   }
