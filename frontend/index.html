@@ -582,7 +582,7 @@
 
 const state = {
   token: localStorage.getItem('sgp_token') || sessionStorage.getItem('sgp_token') || null,
-  apiUrl: localStorage.getItem('sgp_api_url') || (window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : window.location.origin + '/api'),
+  apiUrl: localStorage.getItem('sgp_api_url') || (window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : 'https://backend-v2-production-398f.up.railway.app/api'),
   user: JSON.parse(localStorage.getItem('sgp_user') || sessionStorage.getItem('sgp_user') || 'null'),
   page: 'dashboard',
   cache: { produits: [], clients: [], ventes: [], notifications: [] },
