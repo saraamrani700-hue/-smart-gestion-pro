@@ -1,4 +1,6 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Res, NotFoundException, UseGuards } from '@nestjs/common';
+import { Response } from 'express';
+import { existsSync } from 'fs';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 import { RequirePermissions } from '../../common/decorators/permissions.decorator';
@@ -20,5 +22,17 @@ export class SauvegardesController {
   @RequirePermissions('sauvegardes.lire')
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.sauvegardesService.findAll(user.entrepriseId);
+  }
+
+  @Get(':id/telecharger')
+  @RequirePermissions('sauvegardes.lire')
+  async telecharger(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser, @Res() res: Response) {
+    const sauvegarde = await this.sauvegardesService.findOne(id, user.entrepriseId);
+    if (!sauvegarde || !sauvegarde.fichierUrl || !existsSync(sauvegarde.fichierUrl)) {
+      throw new NotFoundException(
+        "Ce fichier de sauvegarde n'est plus disponible sur le serveur (le conteneur a peut-etre redemarre depuis). Declenchez une nouvelle sauvegarde.",
+      );
+    }
+    res.download(sauvegarde.fichierUrl);
   }
 }

@@ -145,4 +145,8 @@ export class SauvegardesService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  findOne(id: string, entrepriseId: string): Promise<Sauvegarde | null> {
+    return this.sauvegardesRepository.findOne({ where: { id, entrepriseId } });
+  }
 }
