@@ -1801,7 +1801,9 @@ async function openVenteModal() {
   }
 
   const clientOptions = ['<option value="">Client de passage</option>']
-    .concat(state.cache.clients.map(c => `<option value="${c.id}">${escapeHtml(c.nom)}</option>`)).join('');
+    .concat(state.cache.clients.map(c => `<option value="${c.id}">${escapeHtml(c.nom)}</option>`))
+    .concat(['<option value="__new__">+ Nouveau client…</option>'])
+    .join('');
 
   ligneCount = 0;
   openModal(`
@@ -1818,6 +1820,22 @@ async function openVenteModal() {
       </div>
     </form>
   `);
+
+  document.getElementById('vf-client').addEventListener('change', async (e) => {
+    if (e.target.value !== '__new__') return;
+    const nom = prompt('Nom du nouveau client :');
+    if (!nom) { e.target.value = ''; return; }
+    const telephone = prompt('Telephone (optionnel) :') || undefined;
+    try {
+      const client = await api('/clients', { method: 'POST', body: JSON.stringify({ nom, telephone }) });
+      state.cache.clients.push(client);
+      const opt = document.createElement('option');
+      opt.value = client.id; opt.textContent = client.nom;
+      e.target.insertBefore(opt, e.target.lastElementChild);
+      e.target.value = client.id;
+      toast('Client cree.');
+    } catch (err) { toast(err.message, true); e.target.value = ''; }
+  });
 
   document.getElementById('add-ligne-btn').addEventListener('click', () => {
     ligneCount++;
