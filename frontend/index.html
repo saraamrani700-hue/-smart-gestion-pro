@@ -647,6 +647,13 @@
         <span>Smart Gestion Pro</span>
       </div>
       <p class="tag" id="sidebar-espace-tag">Espace entreprise</p>
+      <div style="padding:0 20px 10px;">
+        <select id="app-lang-select" style="width:100%;font-size:12px;padding:6px 8px;">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="ar">🇲🇦 العربية</option>
+          <option value="en">🇬🇧 English</option>
+        </select>
+      </div>
       <hr class="side-sep">
       <nav class="side-nav" id="side-nav"></nav>
       <div class="sidebar-footer">
@@ -765,7 +772,11 @@ function appliquerTraductionsChrome() {
   if (tag) tag.textContent = t('espaceEntreprise');
   const logout = document.getElementById('logout-btn');
   if (logout) logout.textContent = t('deconnexion');
+  const appLangSelect = document.getElementById('app-lang-select');
+  if (appLangSelect) appLangSelect.value = state.langue;
 }
+
+document.getElementById('app-lang-select').addEventListener('change', (e) => definirLangue(e.target.value));
 
 function definirLangue(langue) {
   state.langue = langue;
