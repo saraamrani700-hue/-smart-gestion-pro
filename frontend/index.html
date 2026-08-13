@@ -324,6 +324,26 @@
   .dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
   @media(max-width:900px){ .dash-2col{grid-template-columns:1fr;} }
 
+  .pos-layout{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;}
+  @media(max-width:960px){ .pos-layout{grid-template-columns:1fr;} }
+  .pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;}
+  .pos-product-card{
+    background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;cursor:pointer;
+    text-align:center;transition:box-shadow .12s,transform .12s;
+  }
+  .pos-product-card:hover{box-shadow:0 6px 16px rgba(0,0,0,0.1);transform:translateY(-2px);}
+  .pos-product-card img{width:100%;height:70px;object-fit:cover;border-radius:8px;margin-bottom:6px;}
+  .pos-product-card .ph{width:100%;height:70px;border-radius:8px;margin-bottom:6px;background:var(--bg-soft,#f0f1f5);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:11px;}
+  .pos-product-card .nom{font-size:12px;font-weight:600;line-height:1.3;margin-bottom:4px;min-height:31px;}
+  .pos-product-card .prix{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--brand);}
+  .pos-cart{position:sticky;top:16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;}
+  .pos-cart-line{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .pos-cart-line .nom{flex:1;font-size:13px;font-weight:600;}
+  .pos-cart-line .qty-ctrl{display:flex;align-items:center;gap:4px;}
+  .pos-cart-line .qty-ctrl button{width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;font-weight:700;}
+  .pos-cart-line .qty-ctrl span{min-width:24px;text-align:center;font-family:var(--mono);font-size:13px;}
+  .pos-cart-empty{text-align:center;color:var(--ink-soft);padding:30px 0;font-size:13px;}
+
   .panel{
     background:#fff;
     border:none;
@@ -867,6 +887,7 @@ const NAV_ITEMS = [
   { page: 'clients', label: 'Clients', d: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 21c0-3.3 2.7-6 6-6s6 2.7 6 6M17.5 8a2.5 2.5 0 1 0 0-5M15.5 21c.2-2.6 1.6-4.7 3.3-5.5' },
   { page: 'fournisseurs', label: 'Fournisseurs', d: 'M3 21V8l9-5 9 5v13M9 21v-6h6v6M3 8l9 5 9-5' },
   { page: 'ventes', label: 'Ventes', d: 'M3 4h2l2 12h11l2-8H7M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM17 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z' },
+  { page: 'pos', label: 'Point de Vente', d: 'M2 9.5h20M6 15h2M11 15h4M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z' },
   { page: 'achats', label: 'Achats', d: 'M6 8V6a4 4 0 0 1 8 0v2M4 8h12l-1 12H5z' },
   { page: 'paiements', label: 'Paiements', d: 'M3 6h18v12H3zM3 10h18M6 15h4' },
   { page: 'facturation', label: 'Facturation', d: 'M6 2h9l4 4v16H6zM15 2v4h4M9 12h7M9 16h7M9 8h3' },
@@ -911,7 +932,7 @@ function render() {
     dashboard: renderDashboard, produits: renderProduits, clients: renderClients, fournisseurs: renderFournisseurs, ventes: renderVentes,
     achats: renderAchats, paiements: renderPaiements, facturation: renderFacturation,
     comptabilite: renderComptabilite, rh: renderRh, sav: renderSav, notifications: renderNotifications,
-    ia: renderIa, dgi: renderDgi, sauvegardes: renderSauvegardes, plugins: renderPlugins, rapports: renderRapports,
+    ia: renderIa, dgi: renderDgi, sauvegardes: renderSauvegardes, plugins: renderPlugins, rapports: renderRapports, pos: renderPos,
     audit: renderAudit, administration: renderAdministration,
   };
   (map[state.page] || renderDashboard)();
@@ -2961,8 +2982,165 @@ async function renderSauvegardes() {
 // PLUGINS
 // ---------------------------------------------------------------------
 // ---------------------------------------------------------------------
-// RAPPORTS
+// POINT DE VENTE (POS)
 // ---------------------------------------------------------------------
+let posCart = [];
+
+async function renderPos() {
+  const content = document.getElementById('content');
+  if (!state.cache.produits.length) {
+    try { state.cache.produits = await api('/produits'); } catch (e) { toast(e.message, true); }
+  }
+  if (!state.cache.clients.length) {
+    try { state.cache.clients = await api('/clients'); } catch (e) { /* optionnel */ }
+  }
+  posCart = [];
+
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Point de Vente</h1><p>Encaissement rapide</p></div>
+    </div>
+    <div class="pos-layout">
+      <div>
+        <input id="pos-search" placeholder="Rechercher un produit ou scanner un code-barres…" style="margin-bottom:14px;">
+        <div class="pos-grid" id="pos-grid"></div>
+      </div>
+      <div class="pos-cart">
+        <h3 style="margin:0 0 12px;">Panier</h3>
+        <label>Client</label>
+        <select id="pos-client" style="margin-bottom:12px;">
+          <option value="">Client de passage</option>
+          ${state.cache.clients.map(c => `<option value="${c.id}">${escapeHtml(c.nom)}</option>`).join('')}
+        </select>
+        <div id="pos-cart-lines"></div>
+        <div style="margin-top:12px;padding-top:12px;border-top:2px solid var(--line);">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-bottom:4px;"><span>Total HT</span><span id="pos-total-ht">0.00 DH</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--ink-soft);margin-bottom:8px;"><span>TVA</span><span id="pos-total-tva">0.00 DH</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:700;margin-bottom:14px;"><span>Total TTC</span><span id="pos-total-ttc">0.00 DH</span></div>
+        </div>
+        <label>Moyen de paiement</label>
+        <select id="pos-moyen" style="margin-bottom:14px;">
+          <option value="cash">Especes</option>
+          <option value="tpe">Carte (TPE)</option>
+          <option value="virement">Virement</option>
+          <option value="cheque">Cheque</option>
+          <option value="mobile_wallet">Portefeuille mobile</option>
+        </select>
+        <button class="btn-primary" id="pos-encaisser-btn" style="width:100%;padding:14px;font-size:15px;">Encaisser</button>
+        <button class="btn-secondary" id="pos-vider-btn" style="width:100%;margin-top:8px;">Vider le panier</button>
+      </div>
+    </div>
+  `;
+
+  function afficherProduits(filtre) {
+    const f = (filtre || '').toLowerCase();
+    const produits = state.cache.produits.filter(p =>
+      p.actif && (!f || p.nom.toLowerCase().includes(f) || (p.reference || '').toLowerCase().includes(f) || (p.codeBarre || '').toLowerCase() === f)
+    );
+    document.getElementById('pos-grid').innerHTML = produits.length
+      ? produits.map(p => `
+          <div class="pos-product-card" data-produit="${p.id}">
+            ${p.imageUrl ? `<img src="${p.imageUrl}">` : '<div class="ph">Pas d\'image</div>'}
+            <div class="nom">${escapeHtml(p.nom)}</div>
+            <div class="prix">${money(p.prixVenteHt)} DH</div>
+          </div>`).join('')
+      : '<p style="color:var(--ink-soft);grid-column:1/-1;text-align:center;padding:30px 0;">Aucun produit trouve.</p>';
+
+    document.querySelectorAll('.pos-product-card').forEach(card => {
+      card.addEventListener('click', () => ajouterAuPanier(card.dataset.produit));
+    });
+  }
+
+  function ajouterAuPanier(produitId) {
+    const produit = state.cache.produits.find(p => p.id === produitId);
+    if (!produit) return;
+    const ligne = posCart.find(l => l.produitId === produitId);
+    if (ligne) ligne.quantite += 1;
+    else posCart.push({ produitId, nom: produit.nom, quantite: 1, prixUnitaireHt: Number(produit.prixVenteHt), tauxTva: Number(produit.tauxTva) });
+    dessinerPanier();
+  }
+
+  function dessinerPanier() {
+    const lignesEl = document.getElementById('pos-cart-lines');
+    lignesEl.innerHTML = posCart.length
+      ? posCart.map((l, i) => `
+          <div class="pos-cart-line">
+            <div class="nom">${escapeHtml(l.nom)}<br><span style="color:var(--ink-soft);font-size:11px;">${money(l.prixUnitaireHt)} DH</span></div>
+            <div class="qty-ctrl">
+              <button type="button" data-dec="${i}">−</button>
+              <span>${l.quantite}</span>
+              <button type="button" data-inc="${i}">+</button>
+            </div>
+            <button type="button" data-remove="${i}" style="color:#dc2626;background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+          </div>`).join('')
+      : '<div class="pos-cart-empty">Panier vide.<br>Cliquez sur un produit pour l\'ajouter.</div>';
+
+    lignesEl.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => { posCart[b.dataset.inc].quantite += 1; dessinerPanier(); }));
+    lignesEl.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => {
+      const l = posCart[b.dataset.dec];
+      l.quantite -= 1;
+      if (l.quantite <= 0) posCart.splice(b.dataset.dec, 1);
+      dessinerPanier();
+    }));
+    lignesEl.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => { posCart.splice(b.dataset.remove, 1); dessinerPanier(); }));
+
+    const totalHt = posCart.reduce((s, l) => s + l.quantite * l.prixUnitaireHt, 0);
+    const totalTva = posCart.reduce((s, l) => s + l.quantite * l.prixUnitaireHt * (l.tauxTva / 100), 0);
+    document.getElementById('pos-total-ht').textContent = money(totalHt) + ' DH';
+    document.getElementById('pos-total-tva').textContent = money(totalTva) + ' DH';
+    document.getElementById('pos-total-ttc').textContent = money(totalHt + totalTva) + ' DH';
+  }
+
+  document.getElementById('pos-search').addEventListener('input', (e) => afficherProduits(e.target.value));
+  document.getElementById('pos-search').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const f = e.target.value.toLowerCase();
+    const exact = state.cache.produits.find(p => (p.codeBarre || '').toLowerCase() === f);
+    if (exact) { ajouterAuPanier(exact.id); e.target.value = ''; afficherProduits(''); }
+  });
+
+  document.getElementById('pos-vider-btn').addEventListener('click', () => { posCart = []; dessinerPanier(); });
+
+  document.getElementById('pos-encaisser-btn').addEventListener('click', async (e) => {
+    if (!posCart.length) { toast('Le panier est vide.', true); return; }
+    e.target.disabled = true;
+    e.target.textContent = 'Encaissement…';
+    try {
+      let succursaleId = state.user?.succursaleId;
+      if (!succursaleId) {
+        const succursales = await api('/entreprises/succursales');
+        succursaleId = succursales[0]?.id;
+      }
+      const vente = await api('/ventes', {
+        method: 'POST',
+        body: JSON.stringify({
+          succursaleId,
+          clientId: document.getElementById('pos-client').value || undefined,
+          lignes: posCart.map(l => ({ produitId: l.produitId, quantite: l.quantite, prixUnitaireHt: l.prixUnitaireHt, tauxTva: l.tauxTva })),
+        }),
+      });
+      await api('/paiements', {
+        method: 'POST',
+        body: JSON.stringify({
+          documentType: 'vente',
+          documentId: vente.id,
+          moyenPaiement: document.getElementById('pos-moyen').value,
+          montant: Number(vente.totalTtc),
+          succursaleId,
+        }),
+      });
+      toast(`Vente encaissee : ${money(vente.totalTtc)} DH`);
+      posCart = [];
+      dessinerPanier();
+    } catch (err) { toast(err.message, true); }
+    finally { e.target.disabled = false; e.target.textContent = 'Encaisser'; }
+  });
+
+  afficherProduits('');
+  dessinerPanier();
+}
+
+
 function exporterCsv(nomFichier, headers, rows) {
   const echapper = (v) => {
     const s = String(v ?? '');
