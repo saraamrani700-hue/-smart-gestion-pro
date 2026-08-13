@@ -1260,8 +1260,8 @@ async function renderProduits() {
     <div class="panel">
       <div class="panel-head"><h2>Tous les produits</h2></div>
       <table>
-        <thead><tr><th>Nom</th><th>Reference</th><th class="num">Prix vente HT</th><th class="num">TVA</th><th>Statut</th><th></th></tr></thead>
-        <tbody id="produits-body"><tr class="empty-row"><td colspan="6">Chargement…</td></tr></tbody>
+        <thead><tr><th></th><th>Nom</th><th>Reference</th><th class="num">Prix vente HT</th><th class="num">TVA</th><th>Statut</th><th></th></tr></thead>
+        <tbody id="produits-body"><tr class="empty-row"><td colspan="7">Chargement…</td></tr></tbody>
       </table>
     </div>
   `;
@@ -1275,6 +1275,7 @@ async function renderProduits() {
       tbody.innerHTML = produits.length
         ? produits.map(p => `
             <tr>
+              <td>${p.imageUrl ? `<img src="${p.imageUrl}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;">` : '<div style="width:36px;height:36px;border-radius:6px;background:var(--bg-soft,#f0f1f5);"></div>'}</td>
               <td>${escapeHtml(p.nom)}</td>
               <td>${escapeHtml(p.reference || '—')}</td>
               <td class="num">${money(p.prixVenteHt)} MAD</td>
@@ -1286,7 +1287,7 @@ async function renderProduits() {
                 ${p.actif ? `<button class="btn-secondary" data-delete="${p.id}" data-nom="${escapeHtml(p.nom)}">Supprimer</button>` : ''}
               </td>
             </tr>`).join('')
-        : '<tr class="empty-row"><td colspan="6">Aucun produit. Cliquez sur "Nouveau produit" pour commencer.</td></tr>';
+        : '<tr class="empty-row"><td colspan="7">Aucun produit. Cliquez sur "Nouveau produit" pour commencer.</td></tr>';
 
       tbody.querySelectorAll('button[data-adjust-stock]').forEach(btn => {
         btn.addEventListener('click', () => openStockModal(btn.dataset.adjustStock, btn.dataset.nom));
@@ -1369,6 +1370,15 @@ async function openProduitModal(produitExistant) {
     <h3>${estEdition ? 'Modifier le produit' : 'Nouveau Produit'}</h3>
     <form id="produit-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;max-width:640px;">
       <div style="grid-column:1/-1;"><label>Nom</label><input id="pf-nom" required value="${estEdition ? escapeHtml(produitExistant.nom) : ''}"></div>
+
+      <div style="grid-column:1/-1;">
+        <label>Image du produit</label>
+        <input id="pf-image" type="file" accept="image/*">
+        <div id="pf-image-preview" style="margin-top:8px;">
+          ${estEdition && produitExistant.imageUrl ? `<img src="${produitExistant.imageUrl}" alt="Image actuelle" style="max-height:90px;max-width:140px;border:1px solid var(--line);border-radius:8px;padding:4px;">` : ''}
+        </div>
+      </div>
+
       <div style="grid-column:1/-1;"><label>Description</label><textarea id="pf-description" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;">${estEdition ? escapeHtml(produitExistant.description || '') : ''}</textarea></div>
 
       <div>
@@ -1424,6 +1434,17 @@ async function openProduitModal(produitExistant) {
     document.getElementById('pf-code-barre').value = Date.now().toString().slice(-12);
   });
 
+  document.getElementById('pf-image').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      document.getElementById('pf-image-preview').innerHTML =
+        `<img src="${reader.result}" alt="Apercu" style="max-height:90px;max-width:140px;border:1px solid var(--line);border-radius:8px;padding:4px;">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
   async function gererNouvelleCategorie(select) {
     if (select.value !== '__new__') return;
     const nom = prompt('Nom de la nouvelle categorie :');
@@ -1454,8 +1475,19 @@ async function openProduitModal(produitExistant) {
   document.getElementById('produit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      let imageUrl = estEdition ? produitExistant.imageUrl : undefined;
+      const imageFile = document.getElementById('pf-image').files[0];
+      if (imageFile) {
+        imageUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(imageFile);
+        });
+      }
       const payload = {
         nom: document.getElementById('pf-nom').value,
+        imageUrl: imageUrl || undefined,
         description: document.getElementById('pf-description').value || undefined,
         categorieId: document.getElementById('pf-categorie').value || undefined,
         uniteId: document.getElementById('pf-unite').value || undefined,
