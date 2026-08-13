@@ -46,6 +46,9 @@ export class Produit extends BaseTenantEntity {
   @Column({ name: 'prix_vente_ht', type: 'numeric', precision: 14, scale: 2, default: 0 })
   prixVenteHt: number;
 
+  @Column({ name: 'prix_gros_ht', type: 'numeric', precision: 14, scale: 2, nullable: true })
+  prixGrosHt: number | null;
+
   @Column({ name: 'taux_tva', type: 'numeric', precision: 5, scale: 2, default: 20 })
   tauxTva: number;
 

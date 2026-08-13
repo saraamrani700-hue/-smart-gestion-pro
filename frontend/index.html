@@ -1360,35 +1360,134 @@ async function openStockModal(produitId, nomProduit) {
   });
 }
 
-function openProduitModal(produitExistant) {
+async function openProduitModal(produitExistant) {
   const estEdition = !!produitExistant;
+  let categories = [], unites = [];
+  try { [categories, unites] = await Promise.all([api('/produits/categories'), api('/produits/unites')]); } catch (err) { /* non bloquant */ }
+
   openModal(`
-    <h3>${estEdition ? 'Modifier le produit' : 'Nouveau produit'}</h3>
-    <form id="produit-form">
-      <label>Nom</label><input id="pf-nom" required value="${estEdition ? escapeHtml(produitExistant.nom) : ''}">
-      <label>Prix de vente HT (MAD)</label><input id="pf-prix" type="number" step="0.01" required value="${estEdition ? produitExistant.prixVenteHt : ''}">
-      <label>Taux de TVA (%)</label><input id="pf-tva" type="number" step="0.01" value="${estEdition ? produitExistant.tauxTva : '20'}">
-      <label>Seuil d'alerte de stock</label><input id="pf-seuil" type="number" step="0.001" value="${estEdition ? produitExistant.seuilAlerte : '0'}">
-      <div class="modal-actions">
+    <h3>${estEdition ? 'Modifier le produit' : 'Nouveau Produit'}</h3>
+    <form id="produit-form" style="display:grid;grid-template-columns:1fr 1fr;gap:0 20px;max-width:640px;">
+      <div style="grid-column:1/-1;"><label>Nom</label><input id="pf-nom" required value="${estEdition ? escapeHtml(produitExistant.nom) : ''}"></div>
+      <div style="grid-column:1/-1;"><label>Description</label><textarea id="pf-description" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;">${estEdition ? escapeHtml(produitExistant.description || '') : ''}</textarea></div>
+
+      <div>
+        <label>Categorie</label>
+        <select id="pf-categorie">
+          <option value="">Selectionner une categorie</option>
+          ${categories.map(c => `<option value="${c.id}" ${estEdition && produitExistant.categorieId === c.id ? 'selected' : ''}>${escapeHtml(c.nom)}</option>`).join('')}
+          <option value="__new__">+ Nouvelle categorie…</option>
+        </select>
+      </div>
+      <div>
+        <label>Unite</label>
+        <select id="pf-unite">
+          <option value="">Selectionner une unite</option>
+          ${unites.map(u => `<option value="${u.id}" ${estEdition && produitExistant.uniteId === u.id ? 'selected' : ''}>${escapeHtml(u.nom)} (${escapeHtml(u.symbole)})</option>`).join('')}
+          <option value="__new__">+ Nouvelle unite…</option>
+        </select>
+      </div>
+
+      <div style="grid-column:1/-1;">
+        <label>Code-barres</label>
+        <div style="display:flex;gap:8px;">
+          <input id="pf-code-barre" style="flex:1;" value="${estEdition ? escapeHtml(produitExistant.codeBarre || '') : ''}">
+          <button type="button" class="btn-secondary" id="pf-gen-barcode" title="Generer un code-barres">▥▥▥</button>
+        </div>
+      </div>
+
+      <div><label>Reference</label><input id="pf-reference" value="${estEdition ? escapeHtml(produitExistant.reference || '') : ''}"></div>
+      <div><label>Taux de TVA (%)</label><input id="pf-tva" type="number" step="0.01" value="${estEdition ? produitExistant.tauxTva : '20'}"></div>
+
+      <div><label>Prix d'achat HT (MAD)</label><input id="pf-prix-achat" type="number" step="0.01" value="${estEdition ? (produitExistant.prixAchatHt || 0) : '0'}"></div>
+      <div><label>Prix de vente HT (MAD)</label><input id="pf-prix" type="number" step="0.01" required value="${estEdition ? produitExistant.prixVenteHt : ''}"></div>
+
+      <div><label>Prix de Gros (MAD)</label><input id="pf-prix-gros" type="number" step="0.01" value="${estEdition ? (produitExistant.prixGrosHt ?? '') : ''}"></div>
+      <div><label>Stock Minimum (Alerte)</label><input id="pf-seuil" type="number" step="0.001" value="${estEdition ? produitExistant.seuilAlerte : '0'}"></div>
+
+      ${!estEdition ? '<div><label>Stock Actuel</label><input id="pf-stock-actuel" type="number" step="0.001" value="0"></div><div></div>' : ''}
+
+      <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:6px 0 4px;">
+        <label style="margin:0;display:flex;align-items:center;gap:8px;font-weight:normal;text-transform:none;">
+          <input type="checkbox" id="pf-actif" ${!estEdition || produitExistant.actif ? 'checked' : ''} style="width:auto;"> Produit actif
+        </label>
+      </div>
+
+      <div class="modal-actions" style="grid-column:1/-1;">
         <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
         <button type="submit" class="btn-primary">${estEdition ? 'Enregistrer' : 'Creer'}</button>
       </div>
     </form>
   `);
+
+  document.getElementById('pf-gen-barcode').addEventListener('click', () => {
+    document.getElementById('pf-code-barre').value = Date.now().toString().slice(-12);
+  });
+
+  async function gererNouvelleCategorie(select) {
+    if (select.value !== '__new__') return;
+    const nom = prompt('Nom de la nouvelle categorie :');
+    if (!nom) { select.value = ''; return; }
+    try {
+      const cat = await api('/produits/categories', { method: 'POST', body: JSON.stringify({ nom }) });
+      const opt = document.createElement('option');
+      opt.value = cat.id; opt.textContent = cat.nom;
+      select.insertBefore(opt, select.lastElementChild);
+      select.value = cat.id;
+    } catch (err) { toast(err.message, true); select.value = ''; }
+  }
+  document.getElementById('pf-categorie').addEventListener('change', (e) => gererNouvelleCategorie(e.target));
+  document.getElementById('pf-unite').addEventListener('change', async (e) => {
+    if (e.target.value !== '__new__') return;
+    const nom = prompt('Nom de la nouvelle unite (ex: Kilogramme) :');
+    if (!nom) { e.target.value = ''; return; }
+    const symbole = prompt('Symbole (ex: kg) :') || nom.slice(0, 3);
+    try {
+      const unite = await api('/produits/unites', { method: 'POST', body: JSON.stringify({ nom, symbole }) });
+      const opt = document.createElement('option');
+      opt.value = unite.id; opt.textContent = `${unite.nom} (${unite.symbole})`;
+      e.target.insertBefore(opt, e.target.lastElementChild);
+      e.target.value = unite.id;
+    } catch (err) { toast(err.message, true); e.target.value = ''; }
+  });
+
   document.getElementById('produit-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
       const payload = {
         nom: document.getElementById('pf-nom').value,
+        description: document.getElementById('pf-description').value || undefined,
+        categorieId: document.getElementById('pf-categorie').value || undefined,
+        uniteId: document.getElementById('pf-unite').value || undefined,
+        codeBarre: document.getElementById('pf-code-barre').value || undefined,
+        reference: document.getElementById('pf-reference').value || undefined,
+        prixAchatHt: parseFloat(document.getElementById('pf-prix-achat').value) || 0,
         prixVenteHt: parseFloat(document.getElementById('pf-prix').value),
+        prixGrosHt: document.getElementById('pf-prix-gros').value ? parseFloat(document.getElementById('pf-prix-gros').value) : undefined,
         tauxTva: parseFloat(document.getElementById('pf-tva').value),
         seuilAlerte: parseFloat(document.getElementById('pf-seuil').value),
+        actif: document.getElementById('pf-actif').checked,
       };
+      let produit;
       if (estEdition) {
-        await api(`/produits/${produitExistant.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        produit = await api(`/produits/${produitExistant.id}`, { method: 'PATCH', body: JSON.stringify(payload) });
         toast('Produit modifie.');
       } else {
-        await api('/produits', { method: 'POST', body: JSON.stringify(payload) });
+        produit = await api('/produits', { method: 'POST', body: JSON.stringify(payload) });
+        const stockActuel = parseFloat(document.getElementById('pf-stock-actuel')?.value || '0');
+        if (stockActuel > 0) {
+          let succursaleId = state.user?.succursaleId;
+          if (!succursaleId) {
+            const succursales = await api('/entreprises/succursales');
+            succursaleId = succursales[0]?.id;
+          }
+          if (succursaleId) {
+            await api('/produits/stock/ajuster', {
+              method: 'POST',
+              body: JSON.stringify({ produitId: produit.id, succursaleId, type: 'entree', quantite: stockActuel, motif: 'Stock initial' }),
+            });
+          }
+        }
         toast('Produit cree.');
       }
       closeModal();

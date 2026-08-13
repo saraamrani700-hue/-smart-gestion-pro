@@ -52,6 +52,11 @@ export class CreateProduitDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
+  prixGrosHt?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
   tauxTva?: number;
 
   @IsOptional()

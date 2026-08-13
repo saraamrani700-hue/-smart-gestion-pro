@@ -42,6 +42,30 @@ export class ProduitsController {
     return this.produitsService.getProduitsEnAlerte(user.entrepriseId);
   }
 
+  @Get('categories')
+  @RequirePermissions('produits.read')
+  findAllCategories(@CurrentUser() user: AuthenticatedUser) {
+    return this.produitsService.findAllCategories(user.entrepriseId);
+  }
+
+  @Post('categories')
+  @RequirePermissions('produits.create')
+  createCategorie(@Body() body: { nom: string; parentId?: string }, @CurrentUser() user: AuthenticatedUser) {
+    return this.produitsService.createCategorie(user.entrepriseId, body.nom, body.parentId);
+  }
+
+  @Get('unites')
+  @RequirePermissions('produits.read')
+  findAllUnites(@CurrentUser() user: AuthenticatedUser) {
+    return this.produitsService.findAllUnites(user.entrepriseId);
+  }
+
+  @Post('unites')
+  @RequirePermissions('produits.create')
+  createUnite(@Body() body: { nom: string; symbole: string }, @CurrentUser() user: AuthenticatedUser) {
+    return this.produitsService.createUnite(user.entrepriseId, body.nom, body.symbole);
+  }
+
   @Get(':id')
   @RequirePermissions('produits.read')
   findOne(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {

@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Produit, TypeProduit } from './entities/produit.entity';
+import { Categorie } from './entities/categorie.entity';
+import { UniteMesure } from './entities/unite-mesure.entity';
 import { Stock } from './entities/stock.entity';
 import { MouvementStock, TypeMouvementStock } from './entities/mouvement-stock.entity';
 import { CreateProduitDto } from './dto/create-produit.dto';
@@ -14,6 +16,10 @@ export class ProduitsService {
   constructor(
     @InjectRepository(Produit)
     private produitsRepository: Repository<Produit>,
+    @InjectRepository(Categorie)
+    private categoriesRepository: Repository<Categorie>,
+    @InjectRepository(UniteMesure)
+    private unitesRepository: Repository<UniteMesure>,
     @InjectRepository(Stock)
     private stockRepository: Repository<Stock>,
     @InjectRepository(MouvementStock)
@@ -21,6 +27,28 @@ export class ProduitsService {
     private dataSource: DataSource,
     private cacheService: CacheService,
   ) {}
+
+  // ---------------------------------------------------------------------
+  // CATEGORIES & UNITES DE MESURE
+  // ---------------------------------------------------------------------
+
+  findAllCategories(entrepriseId: string): Promise<Categorie[]> {
+    return this.categoriesRepository.find({ where: { entrepriseId }, order: { nom: 'ASC' } });
+  }
+
+  createCategorie(entrepriseId: string, nom: string, parentId?: string): Promise<Categorie> {
+    const categorie = this.categoriesRepository.create({ entrepriseId, nom, parentId: parentId || null });
+    return this.categoriesRepository.save(categorie);
+  }
+
+  findAllUnites(entrepriseId: string): Promise<UniteMesure[]> {
+    return this.unitesRepository.find({ where: { entrepriseId }, order: { nom: 'ASC' } });
+  }
+
+  createUnite(entrepriseId: string, nom: string, symbole: string): Promise<UniteMesure> {
+    const unite = this.unitesRepository.create({ entrepriseId, nom, symbole });
+    return this.unitesRepository.save(unite);
+  }
 
   // ---------------------------------------------------------------------
   // CRUD PRODUITS
