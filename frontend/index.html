@@ -551,6 +551,21 @@
     .login-wrap{padding:24px 14px;}
     .login-card{padding:56px 24px 28px;}
   }
+
+  /* ---------- RTL (arabe) ---------- */
+  /* Flexbox/grid s'inversent automatiquement avec dir="rtl" ; on ajuste
+     surtout la position fixe du menu mobile et le sens du texte. */
+  body.rtl{direction:rtl;}
+  body.rtl .mobile-menu-btn{left:auto;right:16px;}
+  body.rtl .sidebar-close-btn{right:auto;left:14px;}
+  body.rtl .alerts-bell{right:auto;left:16px;}
+  body.rtl .login-lang-picker{left:auto;right:24px;}
+  body.rtl input, body.rtl select, body.rtl textarea{text-align:right;}
+  body.rtl .num{text-align:left;}
+  @media (max-width: 1024px) {
+    body.rtl .sidebar{left:auto;right:-280px;}
+    body.rtl .sidebar.open{right:0;left:auto;}
+  }
 </style>
 </head>
 <body>
@@ -559,8 +574,12 @@
 <div id="login-screen">
   <canvas id="login-particles"></canvas>
 
-  <div class="login-lang-picker" title="Une seule langue disponible pour le moment">
-    <span style="font-size:10px;">▶</span><span>French - Français</span>
+  <div class="login-lang-picker" style="position:relative;">
+    <select id="login-lang-select" style="background:transparent;color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:4px 8px;font-size:12px;">
+      <option value="fr">Français</option>
+      <option value="ar">العربية</option>
+      <option value="en">English</option>
+    </select>
   </div>
 
   <div class="login-wrap">
@@ -574,17 +593,17 @@
     </div>
 
     <div class="login-card">
-      <h1>Bienvenue</h1>
-      <p class="subtitle">Chez Smart Gestion Pro Enterprise</p>
+      <h1 id="login-titre">Bienvenue</h1>
+      <p class="subtitle" id="login-soustitre">Chez Smart Gestion Pro Enterprise</p>
 
       <form id="login-form">
         <div class="login-field">
-          <label>Nom d'utilisateur (email)</label>
+          <label id="login-label-email">Nom d'utilisateur (email)</label>
           <input type="email" id="login-email" placeholder="Nom d'utilisateur" required>
         </div>
 
         <div class="login-field">
-          <label>Mot de passe <a href="#" onclick="return false;">Mot de passe oublié ?</a></label>
+          <label id="login-label-password">Mot de passe <a href="#" onclick="return false;" id="login-mdp-oublie">Mot de passe oublié ?</a></label>
           <div class="login-password-wrap">
             <input type="password" id="login-password" placeholder="Mot de passe" required>
             <button type="button" class="login-eye-toggle" id="login-eye-toggle" aria-label="Afficher le mot de passe">👁</button>
@@ -598,11 +617,11 @@
           <span class="label" id="login-remember-label">Souviens-toi de moi</span>
         </div>
 
-        <button class="login-submit" type="submit">S'identifier</button>
+        <button class="login-submit" type="submit" id="login-submit-btn">S'identifier</button>
       </form>
 
       <details class="login-advanced">
-        <summary>Configuration serveur</summary>
+        <summary id="login-config-summary">Configuration serveur</summary>
         <label style="color:#a9c6e8;">Adresse de l'API</label>
         <input type="text" id="api-url" value="http://localhost:3000/api">
       </details>
@@ -627,7 +646,7 @@
         </span>
         <span>Smart Gestion Pro</span>
       </div>
-      <p class="tag">Espace entreprise</p>
+      <p class="tag" id="sidebar-espace-tag">Espace entreprise</p>
       <hr class="side-sep">
       <nav class="side-nav" id="side-nav"></nav>
       <div class="sidebar-footer">
@@ -675,8 +694,95 @@ const state = {
   apiUrl: localStorage.getItem('sgp_api_url') || (window.location.origin.includes('localhost') ? 'http://localhost:3000/api' : 'https://backend-v2-production-398f.up.railway.app/api'),
   user: JSON.parse(localStorage.getItem('sgp_user') || sessionStorage.getItem('sgp_user') || 'null'),
   page: 'dashboard',
+  langue: localStorage.getItem('sgp_langue') || 'fr',
   cache: { produits: [], clients: [], ventes: [], notifications: [] },
 };
+
+// ---------------------------------------------------------------------
+// TRADUCTIONS (FR / AR / EN)
+// ---------------------------------------------------------------------
+const TRADUCTIONS = {
+  fr: {
+    bienvenue: 'Bienvenue', chezEntreprise: 'Chez Smart Gestion Pro Enterprise',
+    nomUtilisateur: "Nom d'utilisateur (email)", motDePasse: 'Mot de passe', motDePasseOublie: 'Mot de passe oublie ?',
+    souvienstoi: 'Souviens-toi de moi', sIdentifier: "S'identifier", configurationServeur: 'Configuration serveur',
+    tableauDeBord: 'Tableau de bord', produitsStock: 'Produits & Stock', clients: 'Clients', fournisseurs: 'Fournisseurs',
+    ventes: 'Ventes', pointDeVente: 'Point de Vente', achats: 'Achats', paiements: 'Paiements', facturation: 'Facturation',
+    comptabilite: 'Comptabilite', rapports: 'Rapports', rh: 'RH', sav: 'SAV', notifications: 'Notifications',
+    ia: 'Intelligence Artificielle', dgi: 'Facturation Electronique', sauvegardes: 'Sauvegardes', plugins: 'Plugins',
+    audit: "Journal d'audit", administration: 'Administration', deconnexion: 'Deconnexion', espaceEntreprise: 'Espace entreprise',
+    vueEnsemble: "Vue d'ensemble de votre entreprise", periode: 'Periode', statutVentes: 'Statut des ventes',
+    ceMois: 'Ce Mois', cetteSemaine: 'Cette semaine', cetteAnnee: 'Cette annee', tout: 'Tout', tousLesStatuts: 'Tous les statuts',
+  },
+  ar: {
+    bienvenue: 'مرحبا بكم', chezEntreprise: 'في سمارت جيستيون برو',
+    nomUtilisateur: 'اسم المستخدم (البريد الإلكتروني)', motDePasse: 'كلمة المرور', motDePasseOublie: 'نسيت كلمة المرور؟',
+    souvienstoi: 'تذكرني', sIdentifier: 'تسجيل الدخول', configurationServeur: 'إعدادات الخادم',
+    tableauDeBord: 'لوحة القيادة', produitsStock: 'المنتجات والمخزون', clients: 'العملاء', fournisseurs: 'الموردون',
+    ventes: 'المبيعات', pointDeVente: 'نقطة البيع', achats: 'المشتريات', paiements: 'المدفوعات', facturation: 'الفوترة',
+    comptabilite: 'المحاسبة', rapports: 'التقارير', rh: 'الموارد البشرية', sav: 'خدمة ما بعد البيع', notifications: 'الإشعارات',
+    ia: 'الذكاء الاصطناعي', dgi: 'الفوترة الإلكترونية', sauvegardes: 'النسخ الاحتياطي', plugins: 'الإضافات',
+    audit: 'سجل التدقيق', administration: 'الإدارة', deconnexion: 'تسجيل الخروج', espaceEntreprise: 'مساحة الشركة',
+    vueEnsemble: 'نظرة عامة على شركتك', periode: 'الفترة', statutVentes: 'حالة المبيعات',
+    ceMois: 'هذا الشهر', cetteSemaine: 'هذا الأسبوع', cetteAnnee: 'هذه السنة', tout: 'الكل', tousLesStatuts: 'كل الحالات',
+  },
+  en: {
+    bienvenue: 'Welcome', chezEntreprise: 'To Smart Gestion Pro Enterprise',
+    nomUtilisateur: 'Username (email)', motDePasse: 'Password', motDePasseOublie: 'Forgot password?',
+    souvienstoi: 'Remember me', sIdentifier: 'Sign in', configurationServeur: 'Server configuration',
+    tableauDeBord: 'Dashboard', produitsStock: 'Products & Stock', clients: 'Clients', fournisseurs: 'Suppliers',
+    ventes: 'Sales', pointDeVente: 'Point of Sale', achats: 'Purchases', paiements: 'Payments', facturation: 'Invoicing',
+    comptabilite: 'Accounting', rapports: 'Reports', rh: 'HR', sav: 'Support', notifications: 'Notifications',
+    ia: 'Artificial Intelligence', dgi: 'E-Invoicing', sauvegardes: 'Backups', plugins: 'Plugins',
+    audit: 'Audit Log', administration: 'Administration', deconnexion: 'Log out', espaceEntreprise: 'Business space',
+    vueEnsemble: 'Overview of your business', periode: 'Period', statutVentes: 'Sale status',
+    ceMois: 'This Month', cetteSemaine: 'This Week', cetteAnnee: 'This Year', tout: 'All', tousLesStatuts: 'All statuses',
+  },
+};
+
+function t(cle) {
+  return (TRADUCTIONS[state.langue] && TRADUCTIONS[state.langue][cle]) || TRADUCTIONS.fr[cle] || cle;
+}
+
+function appliquerTraductionsLogin() {
+  document.getElementById('login-titre').textContent = t('bienvenue');
+  document.getElementById('login-soustitre').textContent = t('chezEntreprise');
+  document.getElementById('login-label-email').firstChild.textContent = t('nomUtilisateur') + ' ';
+  document.getElementById('login-mdp-oublie').textContent = t('motDePasseOublie');
+  document.getElementById('login-remember-label').textContent = t('souvienstoi');
+  document.getElementById('login-submit-btn').textContent = t('sIdentifier');
+  document.getElementById('login-config-summary').textContent = t('configurationServeur');
+  const labelPassword = document.getElementById('login-label-password');
+  labelPassword.childNodes[0].textContent = t('motDePasse') + ' ';
+}
+
+document.getElementById('login-lang-select').value = state.langue;
+document.getElementById('login-lang-select').addEventListener('change', (e) => definirLangue(e.target.value));
+definirLangue(state.langue);
+
+function appliquerTraductionsChrome() {
+  const tag = document.getElementById('sidebar-espace-tag');
+  if (tag) tag.textContent = t('espaceEntreprise');
+  const logout = document.getElementById('logout-btn');
+  if (logout) logout.textContent = t('deconnexion');
+}
+
+function definirLangue(langue) {
+  state.langue = langue;
+  localStorage.setItem('sgp_langue', langue);
+  document.documentElement.setAttribute('lang', langue);
+  document.documentElement.setAttribute('dir', langue === 'ar' ? 'rtl' : 'ltr');
+  document.body.classList.toggle('rtl', langue === 'ar');
+  const loginScreen = document.getElementById('login-screen');
+  if (loginScreen && loginScreen.style.display !== 'none') {
+    appliquerTraductionsLogin();
+  } else if (document.getElementById('side-nav')) {
+    renderSideNav();
+    appliquerTraductionsChrome();
+    document.querySelectorAll('#side-nav button').forEach(b => b.classList.toggle('active', b.dataset.page === state.page));
+    render();
+  }
+}
 
 // ---------------------------------------------------------------------
 // API helper
@@ -868,6 +974,7 @@ function initLoginParticles() {
 function enterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
+  appliquerTraductionsChrome();
   const nom = state.user?.nomComplet || 'Utilisateur';
   document.getElementById('who-am-i').textContent = nom;
   document.getElementById('who-am-i').title = state.user?.email || '';
@@ -904,12 +1011,19 @@ const NAV_ITEMS = [
   { page: 'administration', label: 'Administration', d: 'M10.3 2.4h3.4l.6 2.6 2.4 1 2.4-1.4 2.4 2.4-1.4 2.4 1 2.4 2.6.6v3.4l-2.6.6-1 2.4 1.4 2.4-2.4 2.4-2.4-1.4-2.4 1-.6 2.6h-3.4l-.6-2.6-2.4-1-2.4 1.4-2.4-2.4 1.4-2.4-1-2.4-2.6-.6v-3.4l2.6-.6 1-2.4-1.4-2.4 2.4-2.4 2.4 1.4 2.4-1zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
 ];
 
+const NAV_TRAD_CLES = {
+  dashboard: 'tableauDeBord', produits: 'produitsStock', clients: 'clients', fournisseurs: 'fournisseurs',
+  ventes: 'ventes', pos: 'pointDeVente', achats: 'achats', paiements: 'paiements', facturation: 'facturation',
+  comptabilite: 'comptabilite', rapports: 'rapports', rh: 'rh', sav: 'sav', notifications: 'notifications',
+  ia: 'ia', dgi: 'dgi', sauvegardes: 'sauvegardes', plugins: 'plugins', audit: 'audit', administration: 'administration',
+};
+
 function renderSideNav() {
   const nav = document.getElementById('side-nav');
   nav.innerHTML = NAV_ITEMS.map((item, i) => `
-    <button data-page="${item.page}" class="${i === 0 ? 'active' : ''}">
+    <button data-page="${item.page}" class="${item.page === state.page ? 'active' : (state.page ? '' : (i === 0 ? 'active' : ''))}">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${item.d}"></path></svg>
-      ${item.label}
+      ${t(NAV_TRAD_CLES[item.page] || item.page)}
     </button>`).join('');
 }
 renderSideNav();
@@ -988,20 +1102,20 @@ async function renderDashboard() {
   const content = document.getElementById('content');
   content.innerHTML = `
     <div class="page-header">
-      <div><h1>Tableau de bord</h1><p>Vue d'ensemble de votre entreprise</p></div>
+      <div><h1>${t('tableauDeBord')}</h1><p>${t('vueEnsemble')}</p></div>
     </div>
 
     <div class="panel" style="margin-bottom:16px;padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
-      <label style="font-size:13px;color:var(--ink-soft);">Periode</label>
+      <label style="font-size:13px;color:var(--ink-soft);">${t('periode')}</label>
       <select id="dash-periode" style="width:auto;">
-        <option value="mois" selected>Ce Mois</option>
-        <option value="semaine">Cette semaine</option>
-        <option value="annee">Cette annee</option>
-        <option value="tout">Tout</option>
+        <option value="mois" selected>${t('ceMois')}</option>
+        <option value="semaine">${t('cetteSemaine')}</option>
+        <option value="annee">${t('cetteAnnee')}</option>
+        <option value="tout">${t('tout')}</option>
       </select>
-      <label style="font-size:13px;color:var(--ink-soft);margin-left:12px;">Statut des ventes</label>
+      <label style="font-size:13px;color:var(--ink-soft);margin-left:12px;">${t('statutVentes')}</label>
       <select id="dash-statut" style="width:auto;">
-        <option value="">Tous les statuts</option>
+        <option value="">${t('tousLesStatuts')}</option>
         <option value="brouillon">Brouillon</option>
         <option value="validee">Validee</option>
         <option value="payee">Payee</option>
