@@ -321,6 +321,8 @@
   .dash-mini-lbl{font-size:11px;color:var(--ink-soft);margin-top:4px;}
   @media(max-width:900px){ .dash-grid{grid-template-columns:repeat(2,1fr);} .dash-mini-stats{grid-template-columns:repeat(2,1fr);} }
   @media(max-width:560px){ .dash-grid{grid-template-columns:1fr;} }
+  .dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:900px){ .dash-2col{grid-template-columns:1fr;} }
 
   .panel{
     background:#fff;
@@ -1005,9 +1007,26 @@ async function renderDashboard() {
       <div id="dash-compare-chart" style="padding:16px 20px;"></div>
     </div>
 
-    <div class="panel" style="margin-top:20px;">
-      <div class="panel-head"><h2>Produits en alerte de stock</h2></div>
-      <table><tbody id="alerte-body"><tr class="empty-row"><td>Chargement…</td></tr></tbody></table>
+    <div class="dash-2col" style="margin-top:20px;">
+      <div class="panel">
+        <div class="panel-head"><h2>📄 Documents Recents</h2></div>
+        <div id="dash-docs-recents" style="padding:8px 20px 16px;"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>📦 Meilleurs Produits</h2></div>
+        <div id="dash-top-produits" style="padding:8px 20px 16px;"></div>
+      </div>
+    </div>
+
+    <div class="dash-2col" style="margin-top:20px;">
+      <div class="panel">
+        <div class="panel-head"><h2>⚠️ Alertes Stock Faible</h2></div>
+        <div id="dash-alertes-cards" style="padding:8px 20px 16px;"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h2>📈 Revenus Mensuels</h2></div>
+        <div id="dash-revenus-mensuels" style="padding:16px 20px;"></div>
+      </div>
     </div>
   `;
 
@@ -1016,13 +1035,93 @@ async function renderDashboard() {
 
   await loadDashboardData();
   await loadCompareChart();
+  await loadDashboardExtras();
+}
 
+async function loadDashboardExtras() {
+  // --- Documents Recents ---
+  try {
+    const docs = await api('/facturation/documents');
+    const badge = (statut) => {
+      const map = { brouillon: ['brouillon', '#f59e0b'], validee: ['confirme', '#16a34a'], envoyee: ['envoye', '#2563eb'], convertie: ['converti', '#2563eb'], annulee: ['annule', '#dc2626'] };
+      const [label, color] = map[statut] || [statut, '#6b7280'];
+      return `<span style="background:${color}22;color:${color};font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;">${label}</span>`;
+    };
+    const recents = docs.slice(0, 6);
+    document.getElementById('dash-docs-recents').innerHTML = recents.length
+      ? recents.map(d => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);">
+            <div>
+              <div style="font-weight:700;">${escapeHtml(d.numero)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);">${LIBELLE_TYPE_DOC[d.type] || d.type} — ${new Date(d.createdAt).toLocaleDateString('fr-FR')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;">${money(d.totalTtc)} MAD</div>
+              <div style="margin-top:4px;">${badge(d.statut)}</div>
+            </div>
+          </div>`).join('')
+      : '<p style="color:var(--ink-soft);text-align:center;padding:20px 0;">Aucun document pour le moment.</p>';
+
+    // --- Meilleurs Produits (calcule a partir des lignes de documents de vente) ---
+    const parProduit = {};
+    docs.filter(d => d.statut !== 'annulee').forEach(d => {
+      (d.lignes || []).forEach(l => {
+        const nom = l.produit?.nom || l.designation || 'Produit';
+        if (!parProduit[nom]) parProduit[nom] = { quantite: 0, montant: 0 };
+        parProduit[nom].quantite += Number(l.quantite || 0);
+        parProduit[nom].montant += Number(l.quantite || 0) * Number(l.prixUnitaireHt || 0);
+      });
+    });
+    const topProduits = Object.entries(parProduit).sort((a, b) => b[1].montant - a[1].montant).slice(0, 6);
+    document.getElementById('dash-top-produits').innerHTML = topProduits.length
+      ? topProduits.map(([nom, d]) => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line);">
+            <div style="font-weight:600;">${escapeHtml(nom)}</div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;">${money(d.montant)} MAD</div>
+              <div style="font-size:12px;color:var(--ink-soft);">${d.quantite} vendu(s)</div>
+            </div>
+          </div>`).join('')
+      : '<p style="color:var(--ink-soft);text-align:center;padding:20px 0;">Aucune vente enregistree.</p>';
+  } catch (err) { /* non bloquant */ }
+
+  // --- Alertes Stock Faible (version cartes) ---
   try {
     const alertes = await api('/produits/alertes');
-    const tbody = document.getElementById('alerte-body');
-    tbody.innerHTML = alertes.length
-      ? alertes.map(p => `<tr><td>${escapeHtml(p.nom)}</td><td class="num">seuil: ${p.seuilAlerte}</td></tr>`).join('')
-      : '<tr class="empty-row"><td>Aucun produit en alerte pour le moment.</td></tr>';
+    document.getElementById('dash-alertes-cards').innerHTML = alertes.length
+      ? alertes.slice(0, 6).map(p => `
+          <div style="display:flex;justify-content:space-between;align-items:center;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:10px;">
+            <div>
+              <div style="font-weight:700;">${escapeHtml(p.nom)}</div>
+              <div style="font-size:12px;color:var(--ink-soft);">Ref: ${escapeHtml(p.reference || '—')}</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-weight:700;color:#dc2626;font-size:12px;">Sous le seuil</div>
+              <div style="font-size:11px;color:var(--ink-soft);">Min: ${p.seuilAlerte}</div>
+            </div>
+          </div>`).join('')
+      : '<p style="color:var(--ink-soft);text-align:center;padding:20px 0;">Aucune alerte de stock.</p>';
+  } catch (err) { /* non bloquant */ }
+
+  // --- Revenus Mensuels (12 mois de l'annee en cours) ---
+  try {
+    const ventesDocs = (await api('/facturation/documents?type=facture')).filter(d => d.statut !== 'annulee');
+    const annee = new Date().getFullYear();
+    const parMois = Array(12).fill(0);
+    ventesDocs.forEach(d => {
+      const dt = new Date(d.createdAt);
+      if (dt.getFullYear() === annee) parMois[dt.getMonth()] += Number(d.totalTtc || 0);
+    });
+    const maxVal = Math.max(...parMois, 1);
+    const labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+    document.getElementById('dash-revenus-mensuels').innerHTML = `
+      <div style="display:flex;align-items:flex-end;gap:6px;height:170px;">
+        ${parMois.map((v, i) => `
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;">
+            <div title="${money(v)} MAD" style="width:100%;max-width:26px;background:linear-gradient(180deg,#3b82f6,#1d4ed8);border-radius:4px 4px 0 0;height:${Math.max(2, Math.round((v / maxVal) * 140))}px;"></div>
+            <div style="font-size:10px;color:var(--ink-soft);">${labels[i]}</div>
+          </div>`).join('')}
+      </div>`;
   } catch (err) { /* non bloquant */ }
 }
 
