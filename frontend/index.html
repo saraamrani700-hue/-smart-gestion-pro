@@ -2999,6 +2999,7 @@ async function renderPos() {
   content.innerHTML = `
     <div class="page-header">
       <div><h1>Point de Vente</h1><p>Encaissement rapide</p></div>
+      <button class="btn-secondary" id="pos-ticket-settings-btn">⚙ Parametres du ticket</button>
     </div>
     <div class="pos-layout">
       <div>
@@ -3091,6 +3092,8 @@ async function renderPos() {
     document.getElementById('pos-total-ttc').textContent = money(totalHt + totalTva) + ' DH';
   }
 
+  document.getElementById('pos-ticket-settings-btn').addEventListener('click', ouvrirParametresTicket);
+
   document.getElementById('pos-search').addEventListener('input', (e) => afficherProduits(e.target.value));
   document.getElementById('pos-search').addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
@@ -3130,6 +3133,7 @@ async function renderPos() {
         }),
       });
       toast(`Vente encaissee : ${money(vente.totalTtc)} DH`);
+      imprimerTicket(vente, posCart);
       posCart = [];
       dessinerPanier();
     } catch (err) { toast(err.message, true); }
@@ -3166,6 +3170,179 @@ const RAPPORTS_TYPES = [
   { id: 'top-produits', label: 'Produits les plus vendus' },
 ];
 
+async function ouvrirParametresTicket() {
+  let extraParams = {};
+  try {
+    const params = await api('/administration/parametres');
+    extraParams = params.parametres || {};
+  } catch (err) { /* premier lancement */ }
+  const t = extraParams.ticket || {};
+
+  openModal(`
+    <h3>Parametres du Ticket</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <form id="ticket-form">
+        <label>Nom du magasin</label>
+        <input id="tf-nom" value="${escapeHtml(t.nomMagasin || '')}">
+        <label>Sous-titre / Categorie</label>
+        <input id="tf-sous-titre" value="${escapeHtml(t.sousTitre || '')}">
+        <label>Telephone</label>
+        <input id="tf-telephone" value="${escapeHtml(t.telephone || '')}">
+        <label>Adresse</label>
+        <input id="tf-adresse" value="${escapeHtml(t.adresse || '')}">
+        <label>Pied de page (remerciements)</label>
+        <input id="tf-pied" value="${escapeHtml(t.piedDePage || 'Merci de votre visite !')}">
+        <label>Police</label>
+        <select id="tf-police">
+          <option value="monospace" ${(!t.police || t.police === 'monospace') ? 'selected' : ''}>Monospace (Ticket)</option>
+          <option value="sans-serif" ${t.police === 'sans-serif' ? 'selected' : ''}>Sans-serif</option>
+        </select>
+        <label>Taille</label>
+        <select id="tf-taille">
+          <option value="11px" ${t.taille === '11px' ? 'selected' : ''}>Petit</option>
+          <option value="12px" ${(!t.taille || t.taille === '12px') ? 'selected' : ''}>Moyen</option>
+          <option value="14px" ${t.taille === '14px' ? 'selected' : ''}>Grand</option>
+        </select>
+        <label>Epaisseur du texte</label>
+        <select id="tf-epaisseur">
+          <option value="normal" ${(!t.epaisseur || t.epaisseur === 'normal') ? 'selected' : ''}>Normal</option>
+          <option value="bold" ${t.epaisseur === 'bold' ? 'selected' : ''}>Gras</option>
+        </select>
+        <label>Logo du ticket (optionnel)</label>
+        <input id="tf-logo" type="file" accept="image/*">
+        <div id="tf-logo-preview" style="margin-top:6px;">${t.logoDataUrl ? `<img src="${t.logoDataUrl}" style="max-height:50px;">` : ''}</div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeModal()">Annuler</button>
+          <button type="submit" class="btn-primary">Enregistrer les parametres</button>
+        </div>
+      </form>
+      <div>
+        <label>Apercu</label>
+        <div id="ticket-preview" style="background:#f7f7f5;border-radius:8px;padding:16px;"></div>
+      </div>
+    </div>
+  `);
+
+  function majApercu() {
+    const nom = document.getElementById('tf-nom').value || 'Nom du magasin';
+    const sousTitre = document.getElementById('tf-sous-titre').value;
+    const telephone = document.getElementById('tf-telephone').value;
+    const adresse = document.getElementById('tf-adresse').value;
+    const pied = document.getElementById('tf-pied').value;
+    const police = document.getElementById('tf-police').value;
+    const taille = document.getElementById('tf-taille').value;
+    const epaisseur = document.getElementById('tf-epaisseur').value;
+    const logo = document.getElementById('tf-logo-preview').querySelector('img')?.src;
+    document.getElementById('ticket-preview').innerHTML = `
+      <div style="background:#fff;padding:16px;border-radius:4px;font-family:${police};font-size:${taille};font-weight:${epaisseur};max-width:260px;margin:0 auto;">
+        ${logo ? `<div style="text-align:center;margin-bottom:8px;"><img src="${logo}" style="max-height:40px;"></div>` : ''}
+        <div style="text-align:center;font-weight:bold;">${escapeHtml(nom)}</div>
+        ${sousTitre ? `<div style="text-align:center;">${escapeHtml(sousTitre)}</div>` : ''}
+        ${telephone ? `<div style="text-align:center;">${escapeHtml(telephone)}</div>` : ''}
+        ${adresse ? `<div style="text-align:center;">${escapeHtml(adresse)}</div>` : ''}
+        <hr style="border-top:1px dashed #999;margin:8px 0;">
+        <div>Date: ${new Date().toLocaleDateString('fr-FR')}   #0001</div>
+        <div>PRODUIT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TOTAL</div>
+        <hr style="border-top:1px dashed #999;margin:8px 0;">
+        <div>2x Produit Exemple&nbsp;&nbsp;&nbsp;200.00</div>
+        <div>1x Autre Produit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;150.00</div>
+        <hr style="border-top:1px dashed #999;margin:8px 0;">
+        <div style="display:flex;justify-content:space-between;font-weight:bold;">TOTAL <span>350.00 DH</span></div>
+        <hr style="border-top:1px dashed #999;margin:8px 0;">
+        <div style="text-align:center;">${escapeHtml(pied)}</div>
+      </div>`;
+  }
+
+  document.getElementById('tf-logo').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { document.getElementById('tf-logo-preview').innerHTML = `<img src="${reader.result}" style="max-height:50px;">`; majApercu(); };
+    reader.readAsDataURL(file);
+  });
+  ['tf-nom', 'tf-sous-titre', 'tf-telephone', 'tf-adresse', 'tf-pied', 'tf-police', 'tf-taille', 'tf-epaisseur'].forEach(id => {
+    document.getElementById(id).addEventListener('input', majApercu);
+    document.getElementById(id).addEventListener('change', majApercu);
+  });
+  majApercu();
+
+  document.getElementById('ticket-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      extraParams.ticket = {
+        nomMagasin: document.getElementById('tf-nom').value,
+        sousTitre: document.getElementById('tf-sous-titre').value,
+        telephone: document.getElementById('tf-telephone').value,
+        adresse: document.getElementById('tf-adresse').value,
+        piedDePage: document.getElementById('tf-pied').value,
+        police: document.getElementById('tf-police').value,
+        taille: document.getElementById('tf-taille').value,
+        epaisseur: document.getElementById('tf-epaisseur').value,
+        logoDataUrl: document.getElementById('tf-logo-preview').querySelector('img')?.src || (extraParams.ticket && extraParams.ticket.logoDataUrl) || undefined,
+      };
+      await api('/administration/parametres', { method: 'PATCH', body: JSON.stringify({ parametres: extraParams }) });
+      toast('Parametres du ticket enregistres.');
+      closeModal();
+    } catch (err) { toast(err.message, true); }
+  });
+}
+
+async function imprimerTicket(vente, lignesPanier) {
+  let ticket = {};
+  try {
+    const params = await api('/administration/parametres');
+    ticket = (params.parametres || {}).ticket || {};
+  } catch (err) { /* utilise les valeurs par defaut */ }
+
+  const police = ticket.police || 'monospace';
+  const taille = ticket.taille || '12px';
+  const epaisseur = ticket.epaisseur || 'normal';
+
+  const lignesHtml = lignesPanier.map(l => `
+    <div style="display:flex;justify-content:space-between;">
+      <span>${l.quantite}x ${escapeHtml(l.nom)}</span>
+      <span>${money(l.quantite * l.prixUnitaireHt * (1 + l.tauxTva / 100))}</span>
+    </div>`).join('');
+
+  const html = `
+<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<title>Ticket ${escapeHtml(vente.numero || '')}</title>
+<style>
+  body{font-family:${police};font-size:${taille};font-weight:${epaisseur};max-width:280px;margin:20px auto;padding:0;}
+  hr{border:none;border-top:1px dashed #999;margin:8px 0;}
+  .center{text-align:center;}
+  .total{display:flex;justify-content:space-between;font-weight:bold;font-size:1.15em;}
+  .print-bar{text-align:center;margin-bottom:16px;}
+  .print-bar button{background:#0e5f4e;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;}
+  @media print{ .print-bar{display:none;} }
+</style></head>
+<body>
+  <div class="print-bar"><button onclick="window.print()">🖨️ Imprimer</button></div>
+  ${ticket.logoDataUrl ? `<div class="center"><img src="${ticket.logoDataUrl}" style="max-height:50px;"></div>` : ''}
+  <div class="center" style="font-weight:bold;">${escapeHtml(ticket.nomMagasin || 'Smart Gestion Pro')}</div>
+  ${ticket.sousTitre ? `<div class="center">${escapeHtml(ticket.sousTitre)}</div>` : ''}
+  ${ticket.telephone ? `<div class="center">${escapeHtml(ticket.telephone)}</div>` : ''}
+  ${ticket.adresse ? `<div class="center">${escapeHtml(ticket.adresse)}</div>` : ''}
+  <hr>
+  <div>Date: ${new Date(vente.createdAt || Date.now()).toLocaleString('fr-FR')}</div>
+  <div>Vente #${escapeHtml(vente.numero || vente.id?.slice(0, 8) || '')}</div>
+  <hr>
+  ${lignesHtml}
+  <hr>
+  <div class="total"><span>TOTAL</span><span>${money(vente.totalTtc)} DH</span></div>
+  <hr>
+  <div class="center">${escapeHtml(ticket.piedDePage || 'Merci de votre visite !')}</div>
+</body></html>`;
+
+  const fenetre = window.open('', '_blank');
+  if (!fenetre) { toast('Le navigateur a bloque l\'ouverture. Autorisez les pop-ups pour ce site.', true); return; }
+  fenetre.document.write(html);
+  fenetre.document.close();
+}
+
+// ---------------------------------------------------------------------
+// RAPPORTS
+// ---------------------------------------------------------------------
 async function renderRapports() {
   const content = document.getElementById('content');
   const dansUnMois = new Date(); dansUnMois.setMonth(dansUnMois.getMonth() - 1);
