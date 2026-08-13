@@ -871,6 +871,7 @@ const NAV_ITEMS = [
   { page: 'paiements', label: 'Paiements', d: 'M3 6h18v12H3zM3 10h18M6 15h4' },
   { page: 'facturation', label: 'Facturation', d: 'M6 2h9l4 4v16H6zM15 2v4h4M9 12h7M9 16h7M9 8h3' },
   { page: 'comptabilite', label: 'Comptabilite', d: 'M4 3h11v18H4zM8 8h.01M11 8h.01M8 11h.01M11 11h.01M8 14h.01M11 14h.01M8 17h.01M11 17h.01M17 7v13' },
+  { page: 'rapports', label: 'Rapports', d: 'M3 3v18h18M7 15l4-6 3 4 5-8' },
   { page: 'rh', label: 'RH', d: 'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 21c0-3.3 2.7-6 6-6s6 2.7 6 6M17 5l1.5 1.5L21 4' },
   { page: 'sav', label: 'SAV', d: 'M4 13v-1a8 8 0 0 1 16 0v1M2 13h4v6H4a2 2 0 0 1-2-2zM18 13h4v4a2 2 0 0 1-2 2h-2z' },
   { page: 'notifications', label: 'Notifications', d: 'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0' },
@@ -910,7 +911,7 @@ function render() {
     dashboard: renderDashboard, produits: renderProduits, clients: renderClients, fournisseurs: renderFournisseurs, ventes: renderVentes,
     achats: renderAchats, paiements: renderPaiements, facturation: renderFacturation,
     comptabilite: renderComptabilite, rh: renderRh, sav: renderSav, notifications: renderNotifications,
-    ia: renderIa, dgi: renderDgi, sauvegardes: renderSauvegardes, plugins: renderPlugins,
+    ia: renderIa, dgi: renderDgi, sauvegardes: renderSauvegardes, plugins: renderPlugins, rapports: renderRapports,
     audit: renderAudit, administration: renderAdministration,
   };
   (map[state.page] || renderDashboard)();
@@ -2954,6 +2955,234 @@ async function renderSauvegardes() {
     } catch (err) { toast(err.message, true); }
   }
   load();
+}
+
+// ---------------------------------------------------------------------
+// PLUGINS
+// ---------------------------------------------------------------------
+// ---------------------------------------------------------------------
+// RAPPORTS
+// ---------------------------------------------------------------------
+function exporterCsv(nomFichier, headers, rows) {
+  const echapper = (v) => {
+    const s = String(v ?? '');
+    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lignes = [headers.map(echapper).join(';'), ...rows.map(r => r.map(echapper).join(';'))];
+  const blob = new Blob(['\uFEFF' + lignes.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nomFichier;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+const RAPPORTS_TYPES = [
+  { id: 'ventes', label: 'Ventes' },
+  { id: 'achats', label: 'Achats' },
+  { id: 'benefice', label: 'Benefice & Marge' },
+  { id: 'tva', label: 'TVA' },
+  { id: 'stock', label: 'Stock' },
+  { id: 'clients', label: 'Clients' },
+  { id: 'fournisseurs', label: 'Fournisseurs' },
+  { id: 'top-produits', label: 'Produits les plus vendus' },
+];
+
+async function renderRapports() {
+  const content = document.getElementById('content');
+  const dansUnMois = new Date(); dansUnMois.setMonth(dansUnMois.getMonth() - 1);
+  const debutDefaut = dansUnMois.toISOString().slice(0, 10);
+  const finDefaut = new Date().toISOString().slice(0, 10);
+
+  content.innerHTML = `
+    <div class="page-header">
+      <div><h1>Rapports</h1><p>Analyses et exports sur toute l'activite</p></div>
+      <button class="btn-secondary" id="rap-export-btn">Exporter en Excel (CSV)</button>
+    </div>
+    <div class="panel" style="margin-bottom:16px;padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+      <label style="font-size:13px;color:var(--ink-soft);">Rapport</label>
+      <select id="rap-type" style="width:auto;min-width:220px;">
+        ${RAPPORTS_TYPES.map(t => `<option value="${t.id}">${t.label}</option>`).join('')}
+      </select>
+      <label style="font-size:13px;color:var(--ink-soft);margin-left:12px;">Du</label>
+      <input id="rap-debut" type="date" value="${debutDefaut}" style="width:auto;">
+      <label style="font-size:13px;color:var(--ink-soft);">Au</label>
+      <input id="rap-fin" type="date" value="${finDefaut}" style="width:auto;">
+    </div>
+    <div class="dash-grid" id="rap-summary" style="margin-bottom:20px;"></div>
+    <div class="panel">
+      <div class="panel-head"><h2 id="rap-titre">Rapport</h2></div>
+      <table><thead id="rap-thead"></thead><tbody id="rap-tbody"><tr class="empty-row"><td>Chargement…</td></tr></tbody></table>
+    </div>
+  `;
+
+  let dernierExport = { headers: [], rows: [], nom: 'rapport.csv' };
+  document.getElementById('rap-export-btn').addEventListener('click', () => {
+    if (!dernierExport.rows.length) { toast('Aucune donnee a exporter pour ce rapport.', true); return; }
+    exporterCsv(dernierExport.nom, dernierExport.headers, dernierExport.rows);
+  });
+
+  document.getElementById('rap-type').addEventListener('change', charger);
+  document.getElementById('rap-debut').addEventListener('change', charger);
+  document.getElementById('rap-fin').addEventListener('change', charger);
+
+  function dansPeriode(dateStr, debut, fin) {
+    const d = new Date(dateStr).getTime();
+    return d >= new Date(debut).getTime() && d <= new Date(fin).getTime() + 86400000 - 1;
+  }
+
+  function afficherSummary(cartes) {
+    document.getElementById('rap-summary').innerHTML = cartes.map(c => `
+      <div class="dash-card" style="background:${c.couleur};">
+        <div class="dash-card-top"><span class="dash-card-title">${c.titre}</span></div>
+        <div class="dash-card-value">${c.valeur}</div>
+        <div class="dash-card-sub">${c.sous}</div>
+      </div>`).join('');
+  }
+
+  async function charger() {
+    const type = document.getElementById('rap-type').value;
+    const debut = document.getElementById('rap-debut').value;
+    const fin = document.getElementById('rap-fin').value;
+    document.getElementById('rap-titre').textContent = RAPPORTS_TYPES.find(t => t.id === type).label;
+    document.getElementById('rap-thead').innerHTML = '';
+    document.getElementById('rap-tbody').innerHTML = '<tr class="empty-row"><td>Chargement…</td></tr>';
+    document.getElementById('rap-summary').innerHTML = '';
+
+    try {
+      if (type === 'ventes') {
+        const docs = (await api('/facturation/documents?type=facture')).filter(d => dansPeriode(d.createdAt, debut, fin));
+        const totalHt = docs.reduce((s, d) => s + Number(d.totalHt || 0), 0);
+        const totalTtc = docs.reduce((s, d) => s + Number(d.totalTtc || 0), 0);
+        afficherSummary([
+          { titre: 'Chiffre d\'affaires HT', valeur: money(totalHt) + ' DH', sous: `${docs.length} factures`, couleur: 'linear-gradient(135deg,#2563eb,#1d4ed8)' },
+          { titre: 'Chiffre d\'affaires TTC', valeur: money(totalTtc) + ' DH', sous: 'periode selectionnee', couleur: 'linear-gradient(135deg,#16a34a,#15803d)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Numero</th><th>Date</th><th>Client</th><th class="num">Total HT</th><th class="num">Total TTC</th><th>Statut</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = docs.length
+          ? docs.map(d => `<tr><td>${escapeHtml(d.numero)}</td><td>${new Date(d.createdAt).toLocaleDateString('fr-FR')}</td><td>${escapeHtml(d.client?.nom || 'Client de passage')}</td><td class="num">${money(d.totalHt)}</td><td class="num">${money(d.totalTtc)}</td><td>${escapeHtml(d.statut)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="6">Aucune facture sur cette periode.</td></tr>';
+        dernierExport = { nom: 'rapport-ventes.csv', headers: ['Numero', 'Date', 'Client', 'Total HT', 'Total TTC', 'Statut'], rows: docs.map(d => [d.numero, new Date(d.createdAt).toLocaleDateString('fr-FR'), d.client?.nom || 'Client de passage', d.totalHt, d.totalTtc, d.statut]) };
+
+      } else if (type === 'achats') {
+        const achats = (await api('/achats')).filter(a => dansPeriode(a.createdAt, debut, fin));
+        const totalHt = achats.reduce((s, a) => s + Number(a.totalHt || 0), 0);
+        afficherSummary([
+          { titre: 'Total achats HT', valeur: money(totalHt) + ' DH', sous: `${achats.length} achats`, couleur: 'linear-gradient(135deg,#ea580c,#c2410c)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Numero</th><th>Date</th><th>Fournisseur</th><th class="num">Total HT</th><th class="num">Total TTC</th><th>Statut</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = achats.length
+          ? achats.map(a => `<tr><td>${escapeHtml(a.numero)}</td><td>${new Date(a.createdAt).toLocaleDateString('fr-FR')}</td><td>${escapeHtml(a.fournisseur?.nom || '—')}</td><td class="num">${money(a.totalHt)}</td><td class="num">${money(a.totalTtc)}</td><td>${escapeHtml(a.statut)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="6">Aucun achat sur cette periode.</td></tr>';
+        dernierExport = { nom: 'rapport-achats.csv', headers: ['Numero', 'Date', 'Fournisseur', 'Total HT', 'Total TTC', 'Statut'], rows: achats.map(a => [a.numero, new Date(a.createdAt).toLocaleDateString('fr-FR'), a.fournisseur?.nom || '—', a.totalHt, a.totalTtc, a.statut]) };
+
+      } else if (type === 'benefice') {
+        const [ventes, achats] = await Promise.all([
+          api('/facturation/documents?type=facture'), api('/achats'),
+        ]);
+        const ventesP = ventes.filter(d => dansPeriode(d.createdAt, debut, fin) && d.statut !== 'annulee');
+        const achatsP = achats.filter(a => dansPeriode(a.createdAt, debut, fin) && a.statut !== 'annulee');
+        const totalVentes = ventesP.reduce((s, d) => s + Number(d.totalHt || 0), 0);
+        const totalAchats = achatsP.reduce((s, a) => s + Number(a.totalHt || 0), 0);
+        const benefice = totalVentes - totalAchats;
+        const marge = totalVentes > 0 ? (benefice / totalVentes * 100) : 0;
+        afficherSummary([
+          { titre: 'Ventes HT', valeur: money(totalVentes) + ' DH', sous: 'periode', couleur: 'linear-gradient(135deg,#2563eb,#1d4ed8)' },
+          { titre: 'Achats HT', valeur: money(totalAchats) + ' DH', sous: 'periode', couleur: 'linear-gradient(135deg,#ea580c,#c2410c)' },
+          { titre: 'Benefice', valeur: money(benefice) + ' DH', sous: `Marge ${marge.toFixed(1)}%`, couleur: 'linear-gradient(135deg,#9333ea,#7e22ce)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Mois</th><th class="num">Ventes HT</th><th class="num">Achats HT</th><th class="num">Benefice</th></tr>';
+        const parMois = {};
+        ventesP.forEach(d => { const m = d.createdAt.slice(0, 7); parMois[m] = parMois[m] || { v: 0, a: 0 }; parMois[m].v += Number(d.totalHt || 0); });
+        achatsP.forEach(a => { const m = a.createdAt.slice(0, 7); parMois[m] = parMois[m] || { v: 0, a: 0 }; parMois[m].a += Number(a.totalHt || 0); });
+        const moisTries = Object.keys(parMois).sort();
+        document.getElementById('rap-tbody').innerHTML = moisTries.length
+          ? moisTries.map(m => `<tr><td>${m}</td><td class="num">${money(parMois[m].v)}</td><td class="num">${money(parMois[m].a)}</td><td class="num">${money(parMois[m].v - parMois[m].a)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="4">Aucune donnee sur cette periode.</td></tr>';
+        dernierExport = { nom: 'rapport-benefice.csv', headers: ['Mois', 'Ventes HT', 'Achats HT', 'Benefice'], rows: moisTries.map(m => [m, parMois[m].v, parMois[m].a, parMois[m].v - parMois[m].a]) };
+
+      } else if (type === 'tva') {
+        const [ventes, achats] = await Promise.all([api('/facturation/documents?type=facture'), api('/achats')]);
+        const ventesP = ventes.filter(d => dansPeriode(d.createdAt, debut, fin) && d.statut !== 'annulee');
+        const achatsP = achats.filter(a => dansPeriode(a.createdAt, debut, fin) && a.statut !== 'annulee');
+        const tvaCollectee = ventesP.reduce((s, d) => s + Number(d.totalTva || 0), 0);
+        const tvaDeductible = achatsP.reduce((s, a) => s + Number(a.totalTva || 0), 0);
+        afficherSummary([
+          { titre: 'TVA collectee', valeur: money(tvaCollectee) + ' DH', sous: 'sur les ventes', couleur: 'linear-gradient(135deg,#2563eb,#1d4ed8)' },
+          { titre: 'TVA deductible', valeur: money(tvaDeductible) + ' DH', sous: 'sur les achats', couleur: 'linear-gradient(135deg,#ea580c,#c2410c)' },
+          { titre: 'TVA a payer', valeur: money(tvaCollectee - tvaDeductible) + ' DH', sous: 'periode', couleur: 'linear-gradient(135deg,#9333ea,#7e22ce)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Type</th><th>Numero</th><th>Date</th><th class="num">TVA</th></tr>';
+        const lignes = [
+          ...ventesP.map(d => ({ type: 'Vente', numero: d.numero, date: d.createdAt, tva: d.totalTva })),
+          ...achatsP.map(a => ({ type: 'Achat', numero: a.numero, date: a.createdAt, tva: a.totalTva })),
+        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+        document.getElementById('rap-tbody').innerHTML = lignes.length
+          ? lignes.map(l => `<tr><td>${l.type}</td><td>${escapeHtml(l.numero)}</td><td>${new Date(l.date).toLocaleDateString('fr-FR')}</td><td class="num">${money(l.tva)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="4">Aucune donnee sur cette periode.</td></tr>';
+        dernierExport = { nom: 'rapport-tva.csv', headers: ['Type', 'Numero', 'Date', 'TVA'], rows: lignes.map(l => [l.type, l.numero, new Date(l.date).toLocaleDateString('fr-FR'), l.tva]) };
+
+      } else if (type === 'stock') {
+        const produits = (await api('/produits')).filter(p => p.gereStock);
+        const valorisation = produits.filter(p => p.actif).reduce((s, p) => s + Number(p.prixAchatHt || 0), 0);
+        afficherSummary([
+          { titre: 'Valorisation (estimee)', valeur: money(valorisation) + ' DH', sous: `${produits.length} produits geres en stock`, couleur: 'linear-gradient(135deg,#16a34a,#15803d)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Produit</th><th>Reference</th><th class="num">Prix achat</th><th class="num">Prix vente</th><th class="num">Seuil alerte</th><th>Statut</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = produits.length
+          ? produits.map(p => `<tr><td>${escapeHtml(p.nom)}</td><td>${escapeHtml(p.reference || '—')}</td><td class="num">${money(p.prixAchatHt)}</td><td class="num">${money(p.prixVenteHt)}</td><td class="num">${p.seuilAlerte}</td><td>${p.actif ? 'Actif' : 'Inactif'}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="6">Aucun produit gere en stock.</td></tr>';
+        dernierExport = { nom: 'rapport-stock.csv', headers: ['Produit', 'Reference', 'Prix achat', 'Prix vente', 'Seuil alerte', 'Statut'], rows: produits.map(p => [p.nom, p.reference || '', p.prixAchatHt, p.prixVenteHt, p.seuilAlerte, p.actif ? 'Actif' : 'Inactif']) };
+
+      } else if (type === 'clients') {
+        const clients = await api('/clients');
+        const totalSoldes = clients.reduce((s, c) => s + Number(c.solde || 0), 0);
+        afficherSummary([
+          { titre: 'Creances totales', valeur: money(totalSoldes) + ' DH', sous: `${clients.filter(c => c.solde > 0).length} clients debiteurs`, couleur: 'linear-gradient(135deg,#d97706,#b45309)' },
+        ]);
+        const triés = [...clients].sort((a, b) => Number(b.solde) - Number(a.solde));
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Client</th><th>Telephone</th><th class="num">Solde</th><th>Statut</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = triés.length
+          ? triés.map(c => `<tr><td>${escapeHtml(c.nom)}</td><td>${escapeHtml(c.telephone || '—')}</td><td class="num">${money(c.solde)}</td><td>${c.actif ? 'Actif' : 'Inactif'}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="4">Aucun client.</td></tr>';
+        dernierExport = { nom: 'rapport-clients.csv', headers: ['Client', 'Telephone', 'Solde', 'Statut'], rows: triés.map(c => [c.nom, c.telephone || '', c.solde, c.actif ? 'Actif' : 'Inactif']) };
+
+      } else if (type === 'fournisseurs') {
+        const fournisseurs = await api('/fournisseurs');
+        const totalDettes = fournisseurs.reduce((s, f) => s + Number(f.solde || 0), 0);
+        afficherSummary([
+          { titre: 'Dettes totales', valeur: money(totalDettes) + ' DH', sous: `${fournisseurs.length} fournisseurs`, couleur: 'linear-gradient(135deg,#dc2626,#b91c1c)' },
+        ]);
+        const triés = [...fournisseurs].sort((a, b) => Number(b.solde) - Number(a.solde));
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Fournisseur</th><th>Telephone</th><th class="num">Solde (nous devons)</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = triés.length
+          ? triés.map(f => `<tr><td>${escapeHtml(f.nom)}</td><td>${escapeHtml(f.telephone || '—')}</td><td class="num">${money(f.solde)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="3">Aucun fournisseur.</td></tr>';
+        dernierExport = { nom: 'rapport-fournisseurs.csv', headers: ['Fournisseur', 'Telephone', 'Solde'], rows: triés.map(f => [f.nom, f.telephone || '', f.solde]) };
+
+      } else if (type === 'top-produits') {
+        const docs = (await api('/facturation/documents')).filter(d => dansPeriode(d.createdAt, debut, fin) && d.statut !== 'annulee');
+        const parProduit = {};
+        docs.forEach(d => (d.lignes || []).forEach(l => {
+          const nom = l.produit?.nom || l.designation || 'Produit';
+          if (!parProduit[nom]) parProduit[nom] = { quantite: 0, montant: 0 };
+          parProduit[nom].quantite += Number(l.quantite || 0);
+          parProduit[nom].montant += Number(l.quantite || 0) * Number(l.prixUnitaireHt || 0);
+        }));
+        const tries = Object.entries(parProduit).sort((a, b) => b[1].montant - a[1].montant);
+        afficherSummary([
+          { titre: 'Produits vendus (distincts)', valeur: String(tries.length), sous: 'periode selectionnee', couleur: 'linear-gradient(135deg,#2563eb,#1d4ed8)' },
+        ]);
+        document.getElementById('rap-thead').innerHTML = '<tr><th>Produit</th><th class="num">Quantite vendue</th><th class="num">Chiffre d\'affaires</th></tr>';
+        document.getElementById('rap-tbody').innerHTML = tries.length
+          ? tries.map(([nom, d]) => `<tr><td>${escapeHtml(nom)}</td><td class="num">${d.quantite}</td><td class="num">${money(d.montant)}</td></tr>`).join('')
+          : '<tr class="empty-row"><td colspan="3">Aucune vente sur cette periode.</td></tr>';
+        dernierExport = { nom: 'rapport-top-produits.csv', headers: ['Produit', 'Quantite', 'Chiffre affaires'], rows: tries.map(([nom, d]) => [nom, d.quantite, d.montant]) };
+      }
+    } catch (err) { toast(err.message, true); }
+  }
+
+  charger();
 }
 
 // ---------------------------------------------------------------------
